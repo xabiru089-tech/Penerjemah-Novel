@@ -93,10 +93,10 @@
     <!-- Modal Chapter + AI Translator -->
     <div id="modal-chapter" class="modal">
         <div class="modal-content">
-            <h3>Penerjemah AI Novel (Luwes & Natural)</h3><br>
+            <h3>Penerjemah AI Novel (Gemini 3.8 Flash)</h3><br>
             
             <div class="api-box">
-                <label style="color: #A78BFA; font-weight: bold;">Google Gemini API Key (Diperlukan agar terjemahan tidak kaku):</label>
+                <label style="color: #A78BFA; font-weight: bold;">Google Gemini API Key:</label>
                 <input type="password" id="gemini-api-key" placeholder="Tempel Gemini API Key kamu di sini..." onchange="saveApiKey()">
                 <span style="font-size:0.7rem; color: var(--text-sub);">*Dapatkan gratis di aistudio.google.com. Kunci tersimpan aman di browser-mu.</span>
             </div>
@@ -289,7 +289,8 @@
         }
 
         async function fetchGeminiTranslation(apiKey, textChunk) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            // DIBAWAH INI ADALAH URL ENDPOINT MENGGUNAKAN GEMINI 3.8 FLASH
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
             
             const promptText = `
 Kamu adalah penerjemah novel Mandarin ke Bahasa Indonesia yang sangat handal.
@@ -347,5 +348,5 @@ ${textChunk}`;
         renderNovels();
     </script>
 </body>
-                </html>
+    </html>
     
