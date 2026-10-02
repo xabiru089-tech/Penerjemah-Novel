@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arsip Novel Terjemahan</title>
+    <style>
+        :root {
+            --bg-main: #121319;
+            --bg-card: #1A1C24;
+            --accent: #7C4DFF;
+            --accent-hover: #6538E0;
+            --text-main: #E0E0E0;
+            --text-sub: #A0A0A0;
+            --border: #2A2D3D;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg-main); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+        .logo { font-size: 1.2rem; font-weight: bold; color: var(--accent); }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        button { background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 0.85rem; }
+        button:hover { background: var(--accent-hover); }
+        button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-top: 15px; }
+        .card { background: var(--bg-card); border-radius: 8px; padding: 10px; border: 1px solid var(--border); display: flex; flex-direction: column; cursor: pointer; }
+        .card-title { font-weight: bold; font-size: 0.95rem; margin-bottom: 5px; color: #FFF; line-height: 1.2; }
+        .card-info { font-size: 0.75rem; color: var(--text-sub); }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 15px; z-index: 100; }
+        .modal-content { background: var(--bg-card); width: 100%; max-width: 600px; border-radius: 10px; padding: 20px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--text-sub); }
+        input, textarea { width: 100%; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 8px; border-radius: 6px; font-size: 0.9rem; }
+        textarea { resize: vertical; min-height: 120px; }
+        .reader-view { display: none; }
+        .reader-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .reader-content { font-size: 1.05rem; line-height: 1.8; color: #D1D5DB; white-space: pre-wrap; }
+        .translate-box { background: var(--bg-main); border: 1px dashed var(--accent); padding: 10px; border-radius: 6px; margin-bottom: 12px; }
+        .status-msg { font-size: 0.8rem; color: var(--accent); margin-top: 5px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div id="app-home">
+        <header>
+            <div class="logo">Arsip Novel Mandarin</div>
+            <div class="btn-group">
+                <button class="secondary" onclick="exportData()">Export</button>
+                <button class="secondary" onclick="document.getElementById('file-input').click()">Import</button>
+                <input type="file" id="file-input" style="display:none" onchange="importData(event)">
+                <button onclick="openModal('modal-novel')">+ Novel</button>
+            </div>
+        </header>
+        <div id="novel-list" class="grid"></div>
+    </div>
+
+    <div id="app-novel" class="reader-view">
+        <header>
+            <button class="secondary" onclick="showView('app-home')">← Kembali</button>
+            <div id="novel-detail-title" class="logo">Detail Novel</div>
+            <button onclick="openModal('modal-chapter')">+ Bab Terjemahan</button>
+        </header>
+        <div id="chapter-list" class="grid"></div>
+    </div>
+
+    <div id="app-reader" class="reader-view">
+        <div class="reader-header">
+            <button class="secondary" onclick="showView('app-novel')">← Daftar Bab</button>
+            <h3 id="read-chapter-title">Judul Bab</h3>
+        </div>
+        <div id="read-chapter-content" class="reader-content"></div>
+    </div>
+
+    <!-- Modal Novel -->
+    <div id="modal-novel" class="modal">
+        <div class="modal-content">
+            <h3>Tambah Judul Novel</h3><br>
+            <div class="form-group">
+                <label>Judul Novel (Bisa Bahasa Mandarin / Indonesia)</label>
+                <input type="text" id="input-novel-title" placeholder="Contoh: 全职高手 / Master of All Skills">
+            </div>
+            <div class="btn-group" style="justify-content: flex-end;">
+                <button class="secondary" onclick="closeModal('modal-novel')">Batal</button>
+                <button onclick="saveNovel()">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chapter + Auto Translator -->
+    <div id="modal-chapter" class="modal">
+        <div class="modal-content">
+            <h3>Tambah / Menerjemahkan Bab Novel</h3><br>
+            
+            <div class="translate-box">
+                <label style="color: var(--accent); font-weight: bold;">Penerjemah Otomatis (Mandarin ➔ Indonesia Formal)</label>
+                <textarea id="raw-chinese-text" placeholder="Tempelkan teks Mandarin (Sederhana/Tradisional) di sini untuk diterjemahkan..."></textarea>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                    <button type="button" onclick="translateMandarinToIndo()">Terjemahkan Teks</button>
+                    <span id="trans-status" class="status-msg">Sedang menerjemahkan...</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Judul Bab</label>
+                <input type="text" id="input-chapter-title" placeholder="Contoh: Bab 1: Kemunculan Kembali">
+            </div>
+            <div class="form-group">
+                <label>Hasil Terjemahan (Bisa diedit manual)</label>
+                <textarea id="input-chapter-content" placeholder="Hasil terjemahan akan otomatis masuk ke sini..."></textarea>
+            </div>
+            <div class="btn-group" style="justify-content: flex-end;">
+                <button class="secondary" onclick="closeModal('modal-chapter')">Batal</button>
+                <button onclick="saveChapter()">Simpan Bab</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('my_novels')) || [];
+        let activeNovelId = null;
+
+        function saveData() {
+            localStorage.setItem('my_novels', JSON.stringify(db));
+            renderNovels();
+        }
+
+        function showView(viewId) {
+            document.querySelectorAll('#app-home, .reader-view').forEach(el => el.style.display = 'none');
+            document.getElementById(viewId).style.display = 'block';
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function saveNovel() {
+            const title = document.getElementById('input-novel-title').value.trim();
+            if(!title) return;
+            db.push({ id: Date.now(), title, chapters: [] });
+            document.getElementById('input-novel-title').value = '';
+            closeModal('modal-novel');
+            saveData();
+        }
+
+        function renderNovels() {
+            const container = document.getElementById('novel-list');
+            container.innerHTML = db.length === 0 ? '<p style="color:var(--text-sub)">Belum ada novel. Klik + Novel untuk menambah.</p>' : '';
+            db.forEach(n => {
+                container.innerHTML += `
+                    <div class="card" onclick="openNovel(${n.id})">
+                        <div class="card-title">${n.title}</div>
+                        <div class="card-info">${n.chapters.length} Bab</div>
+                    </div>`;
+            });
+        }
+
+        function openNovel(id) {
+            activeNovelId = id;
+            const novel = db.find(n => n.id === id);
+            document.getElementById('novel-detail-title').innerText = novel.title;
+            renderChapters();
+            showView('app-novel');
+        }
+
+        function saveChapter() {
+            const title = document.getElementById('input-chapter-title').value.trim();
+            const content = document.getElementById('input-chapter-content').value.trim();
+            if(!title || !content) return;
+            const novel = db.find(n => n.id === activeNovelId);
+            novel.chapters.push({ id: Date.now(), title, content });
+            document.getElementById('input-chapter-title').value = '';
+            document.getElementById('input-chapter-content').value = '';
+            document.getElementById('raw-chinese-text').value = '';
+            closeModal('modal-chapter');
+            saveData();
+            renderChapters();
+        }
+
+        function renderChapters() {
+            const novel = db.find(n => n.id === activeNovelId);
+            const container = document.getElementById('chapter-list');
+            container.innerHTML = novel.chapters.length === 0 ? '<p style="color:var(--text-sub)">Belum ada bab.</p>' : '';
+            novel.chapters.forEach(c => {
+                container.innerHTML += `
+                    <div class="card" onclick="readChapter(${c.id})">
+                        <div class="card-title">${c.title}</div>
+                    </div>`;
+            });
+        }
+
+        function readChapter(chapId) {
+            const novel = db.find(n => n.id === activeNovelId);
+            const chap = novel.chapters.find(c => c.id === chapId);
+            document.getElementById('read-chapter-title').innerText = chap.title;
+            document.getElementById('read-chapter-content').innerText = chap.content;
+            showView('app-reader');
+        }
+
+        /* --- LOGIKA PENERJEMAH KHUSUS NOVEL MANDARIN --- */
+        async function translateMandarinToIndo() {
+            const rawText = document.getElementById('raw-chinese-text').value.trim();
+            const statusEl = document.getElementById('trans-status');
+            
+            if(!rawText) {
+                alert('Silakan masukkan teks Mandarin terlebih dahulu!');
+                return;
+            }
+
+            statusEl.innerText = "Menerjemahkan dengan gaya novel...";
+            statusEl.style.display = "inline";
+
+            try {
+                // Menggunakan API terjemahan presisi tinggi
+                const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=id&dt=t&q=${encodeURIComponent(rawText)}`);
+                const data = await response.json();
+                
+                let translatedResult = '';
+                if (data && data[0]) {
+                    data[0].forEach(item => {
+                        if (item[0]) translatedResult += item[0];
+                    });
+                }
+
+                // Menyaring kata slang & mengamankan gaya novel sastra
+                translatedResult = postProcessNovelTranslation(translatedResult);
+
+                document.getElementById('input-chapter-content').value = translatedResult;
+                statusEl.innerText = "Selesai!";
+                setTimeout(() => { statusEl.style.display = "none"; }, 2000);
+
+            } catch (error) {
+                statusEl.innerText = "Gagal menerjemahkan. Coba lagi.";
+                console.error(error);
+            }
+        }
+
+        /* Pembersihan Kata Slang & Penyesuaian Budaya Novel Mandarin */
+        function postProcessNovelTranslation(text) {
+            return text
+                // Menghapus/Mengganti kata slang Indonesia ke bentuk formal baku
+                .replace(/\bgak\b/gi, "tidak")
+                .replace(/\bnggak\b/gi, "tidak")
+                .replace(/\bbisa aja\b/gi, "dapat")
+                .replace(/\bcuma\b/gi, "hanya")
+                .replace(/\bbanget\b/gi, "sangat")
+                .replace(/\bcewek\b/gi, "gadis")
+                .replace(/\bcowok\b/gi, "pria")
+                .replace(/\bLu\b/gi, "Anda")
+                .replace(/\bGua\b/gi, "Saya")
+                .replace(/\bGwe\b/gi, "Saya")
+                .replace(/\bKalo\b/gi, "Jika")
+                .replace(/\bBakal\b/gi, "Akan")
+                .replace(/\bUdah\b/gi, "Sudah")
+                // Menjaga kerapihan paragraf
+                .replace(/\n\s*\n/g, '\n\n');
+        }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'cadangan_novel.json';
+            a.click();
+        }
+
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    db = JSON.parse(evt.target.result);
+                    saveData();
+                    alert('Data berhasil diimpor!');
+                } catch(err) {
+                    alert('File JSON tidak valid!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        renderNovels();
+    </script>
+</body>
+</html>
