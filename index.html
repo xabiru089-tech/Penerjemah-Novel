@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penerjemah & Arsip Novel Mandarin</title>
+    <title>Penerjemah & Arsip Novel Mandarin Formal</title>
     <style>
         :root {
             --bg-main: #121319;
@@ -40,6 +40,7 @@
         .status-msg { font-size: 0.8rem; color: #FFB74D; margin-top: 5px; display: none; font-weight: bold; }
         .progress-bar { width: 100%; background: var(--border); height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden; display: none; }
         .progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.3s; }
+        .glossary-box { background: #181920; border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -94,11 +95,22 @@
         <div class="modal-content">
             <h3>Tambah / Menerjemahkan Bab Novel</h3><br>
             
+            <!-- Pengaturan Nama Tokoh & Istilah (Glosarium) -->
+            <div class="glossary-box">
+                <label style="color: var(--accent); font-weight: bold;">Kamus Nama Tokoh & Istilah Mandiri (Format: TeksAwal=Hasil)</label>
+                <textarea id="glossary-rules" style="min-height: 60px; font-size: 0.8rem;" placeholder="Contoh:
+Pangeran=Pangeran
+Ye Xiu=Ye Xiu
+Sect=Sekte
+Martial Arts=Seni Bela Diri"></textarea>
+                <span style="font-size:0.7rem; color: var(--text-sub);">*Gunakan ini untuk mengunci nama tokoh/istilah khusus agar tidak diterjemahkan salah oleh sistem.</span>
+            </div>
+
             <div class="translate-box">
-                <label style="color: var(--accent); font-weight: bold;">Penerjemah Otomatis Teks Panjang</label>
+                <label style="color: var(--accent); font-weight: bold;">Penerjemah Mandarin Formal (Tanpa Slang)</label>
                 <textarea id="raw-chinese-text" placeholder="Tempelkan seluruh teks Mandarin satu bab penuh di sini..."></textarea>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                    <button type="button" id="btn-trans" onclick="translateLongText()">Terjemahkan Semua</button>
+                    <button type="button" id="btn-trans" onclick="translateLongText()">Terjemahkan Formal</button>
                     <span id="trans-status" class="status-msg">Memproses...</span>
                 </div>
                 <div id="progress-container" class="progress-bar">
@@ -111,7 +123,7 @@
                 <input type="text" id="input-chapter-title" placeholder="Contoh: Bab 1: Kemunculan Kembali">
             </div>
             <div class="form-group">
-                <label>Hasil Terjemahan Lengkap</label>
+                <label>Hasil Terjemahan Baku & Rapi</label>
                 <textarea id="input-chapter-content" placeholder="Hasil terjemahan akan gabung otomatis di sini..."></textarea>
             </div>
             <div class="btn-group" style="justify-content: flex-end;">
@@ -201,7 +213,7 @@
             showView('app-reader');
         }
 
-        /* --- LOGIKA PENERJEMAH OTOMATIS TEKS PANJANG (AUTO-CHUNKING) --- */
+        /* --- PENERJEMAH TEKS PANJANG DENGAN PEMERIKSAAN BAHASA FORMAL & NAMA TOKOH --- */
         async function translateLongText() {
             const rawText = document.getElementById('raw-chinese-text').value.trim();
             const statusEl = document.getElementById('trans-status');
@@ -218,14 +230,12 @@
             statusEl.style.display = "inline";
             progressContainer.style.display = "block";
             btnTrans.disabled = true;
-            resultBox.value = ""; // Kosongkan box hasil dulu
+            resultBox.value = ""; 
 
-            // Potong teks berdasarkan tanda titik/baris baru agar kalimat tidak terputus (Maksimal ~400 Karakter per potong)
-            const chunks = chunkText(rawText, 400);
+            const chunks = chunkText(rawText, 450);
             let fullTranslatedText = "";
 
             for (let i = 0; i < chunks.length; i++) {
-                // Update Progress Bar
                 const percent = Math.round(((i + 1) / chunks.length) * 100);
                 progressFill.style.width = percent + "%";
                 statusEl.innerText = `Menerjemahkan... (${percent}%)`;
@@ -233,13 +243,16 @@
                 try {
                     const translatedChunk = await fetchTranslation(chunks[i]);
                     fullTranslatedText += translatedChunk + "\n\n";
-                    // Tampilkan secara real-time ke box hasil
-                    resultBox.value = postProcessNovelTranslation(fullTranslatedText);
+                    
+                    // Bersihkan bahasa gaul & Terapkan Glosarium Nama Tokoh
+                    let cleanedText = postProcessNovelTranslation(fullTranslatedText);
+                    cleanedText = applyGlossaryRules(cleanedText);
+                    
+                    resultBox.value = cleanedText;
                 } catch (err) {
-                    console.error("Gagal di bagian:", chunks[i]);
+                    console.error("Error pada chunk:", err);
                 }
 
-                // Beri jeda 300ms agar server tidak memblokir koneksi
                 await new Promise(r => setTimeout(r, 300));
             }
 
@@ -253,7 +266,6 @@
             btnTrans.disabled = false;
         }
 
-        // Fungsi membagi teks panjang jadi beberapa bagian tanpa memotong kalimat
         function chunkText(text, maxLength) {
             const paragraphs = text.split('\n');
             const chunks = [];
@@ -271,42 +283,79 @@
             return chunks;
         }
 
-        // Fetching API dengan Fallback
         async function fetchTranslation(textChunk) {
-            const url1 = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=id&dt=t&q=${encodeURIComponent(textChunk)}`;
-            try {
-                const res = await fetch(url1);
-                const data = await res.json();
-                let text = "";
-                if (data && data[0]) {
-                    data[0].forEach(item => { if (item[0]) text += item[0]; });
-                }
-                return text;
-            } catch (e) {
-                // Alternatif API 2
-                const url2 = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textChunk)}&langpair=zh|id`;
-                const res2 = await fetch(url2);
-                const data2 = await res2.json();
-                return data2.responseData ? data2.responseData.translatedText : textChunk;
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=id&dt=t&q=${encodeURIComponent(textChunk)}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            let text = "";
+            if (data && data[0]) {
+                data[0].forEach(item => { if (item[0]) text += item[0]; });
             }
+            return text;
         }
 
-        /* Rapikan kata-kata gaul/slang agar kalimat novel lebih formal */
+        /* PERBAIKAN TOTAL GAYA BAHASA NOVEL (FORMAL NOVEL NO-SLANG) */
         function postProcessNovelTranslation(text) {
             return text
+                // Menghapus kata panggilan gaul Indonesia
+                .replace(/\bmbak\b/gi, "")
+                .replace(/\bmas\b/gi, "")
+                .replace(/\bbang\b/gi, "")
+                .replace(/\bbro\b/gi, "")
+                .replace(/\bsis\b/gi, "")
+                
+                // Menghapus kata ganti gaul
+                .replace(/\bgue\b/gi, "Saya")
+                .replace(/\bgwe\b/gi, "Saya")
+                .replace(/\bgua\b/gi, "Saya")
+                .replace(/\bloe\b/gi, "Anda")
+                .replace(/\blu\b/gi, "Anda")
+                .replace(/\bdia orang\b/gi, "mereka")
+                
+                // Menghapus kata hubung/keterangan informal
                 .replace(/\bgak\b/gi, "tidak")
                 .replace(/\bnggak\b/gi, "tidak")
+                .replace(/\bngak\b/gi, "tidak")
+                .replace(/\bbanget\b/gi, "sangat")
                 .replace(/\bbisa aja\b/gi, "dapat")
                 .replace(/\bcuma\b/gi, "hanya")
-                .replace(/\bbanget\b/gi, "sangat")
                 .replace(/\bcewek\b/gi, "gadis")
                 .replace(/\bcowok\b/gi, "pria")
-                .replace(/\bLu\b/gi, "Anda")
-                .replace(/\bGua\b/gi, "Saya")
-                .replace(/\bKalo\b/gi, "Jika")
-                .replace(/\bBakal\b/gi, "Akan")
-                .replace(/\bUdah\b/gi, "Sudah")
+                .replace(/\bkalo\b/gi, "jika")
+                .replace(/\bkalau\b/gi, "jika")
+                .replace(/\bbakal\b/gi, "akan")
+                .replace(/\budah\b/gi, "sudah")
+                .replace(/\bdah\b/gi, "sudah")
+                .replace(/\bgimana\b/gi, "bagaimana")
+                .replace(/\bkenapa\b/gi, "mengapa")
+                .replace(/\baja\b/gi, "saja")
+                .replace(/\bbelom\b/gi, "belum")
+                
+                // Merapikan tanda baca & paragraf
+                .replace(/ ,/g, ",")
+                .replace(/ \./g, ".")
                 .replace(/\n\s*\n/g, '\n\n');
+        }
+
+        /* PENERAPAN KAMUS NAMA TOKOH & ISTILAH DARI USER */
+        function applyGlossaryRules(text) {
+            const rulesRaw = document.getElementById('glossary-rules').value.trim();
+            if (!rulesRaw) return text;
+
+            const lines = rulesRaw.split('\n');
+            lines.forEach(line => {
+                const parts = line.split('=');
+                if (parts.length === 2) {
+                    const original = parts[0].trim();
+                    const replacement = parts[1].trim();
+                    if (original && replacement) {
+                        const regex = new RegExp(original, 'gi');
+                        text = text.replace(regex, replacement);
+                    }
+                }
+            });
+
+            return text;
         }
 
         function exportData() {
@@ -336,5 +385,5 @@
         renderNovels();
     </script>
 </body>
-    </html>
+                </html>
     
