@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asisten Penerjemah Novel (Tanpa API)</title>
+    <title>Penerjemah & Pembaca Novel Manual</title>
     <style>
         :root {
             --bg-main: #121319;
@@ -21,7 +21,6 @@
         .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
         button { background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 0.85rem; }
         button:hover { background: var(--accent-hover); }
-        button:disabled { background: #4A4D5D; cursor: not-allowed; }
         button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-top: 15px; }
         .card { background: var(--bg-card); border-radius: 8px; padding: 10px; border: 1px solid var(--border); display: flex; flex-direction: column; cursor: pointer; }
@@ -32,12 +31,10 @@
         .form-group { margin-bottom: 12px; }
         label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--text-sub); }
         input, textarea { width: 100%; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 8px; border-radius: 6px; font-size: 0.9rem; }
-        textarea { resize: vertical; min-height: 120px; }
+        textarea { resize: vertical; min-height: 140px; }
         .reader-view { display: none; }
         .reader-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
         .reader-content { font-size: 1.05rem; line-height: 1.8; color: #D1D5DB; white-space: pre-wrap; }
-        
-        /* Layout Editor Beda Kolom (Side-by-Side) */
         .editor-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         @media (max-width: 600px) {
             .editor-container { grid-template-columns: 1fr; }
@@ -53,7 +50,7 @@
                 <button class="secondary" onclick="exportData()">Export</button>
                 <button class="secondary" onclick="document.getElementById('file-input').click()">Import</button>
                 <input type="file" id="file-input" style="display:none" onchange="importData(event)">
-                <button onclick="openModal('modal-novel')">+ Novel</button>
+                <button onclick="openModal('modal-novel')">+ Novel Baru</button>
             </div>
         </header>
         <div id="novel-list" class="grid"></div>
@@ -63,7 +60,7 @@
         <header>
             <button class="secondary" onclick="showView('app-home')">← Kembali</button>
             <div id="novel-detail-title" class="logo">Detail Novel</div>
-            <button onclick="openModal('modal-chapter')">+ Tambah Bab Manual</button>
+            <button onclick="openModal('modal-chapter')">+ Tambah Bab</button>
         </header>
         <div id="chapter-list" class="grid"></div>
     </div>
@@ -83,7 +80,7 @@
             <h3>Tambah Judul Novel</h3><br>
             <div class="form-group">
                 <label>Judul Novel</label>
-                <input type="text" id="input-novel-title" placeholder="Contoh: 全职高手 / Master of All Skills">
+                <input type="text" id="input-novel-title" placeholder="Masukkan judul novel...">
             </div>
             <div class="btn-group" style="justify-content: flex-end;">
                 <button class="secondary" onclick="closeModal('modal-novel')">Batal</button>
@@ -92,10 +89,10 @@
         </div>
     </div>
 
-    <!-- Modal Chapter (Input Manual Tanpa API) -->
+    <!-- Modal Chapter (TANPA API) -->
     <div id="modal-chapter" class="modal">
         <div class="modal-content">
-            <h3>Input & Penerjemahan Manual Bab</h3><br>
+            <h3>Input Bab Terjemahan</h3><br>
             
             <div class="form-group">
                 <label>Judul Bab</label>
@@ -104,12 +101,12 @@
 
             <div class="editor-container">
                 <div class="form-group">
-                    <label style="color: var(--accent); font-weight: bold;">Teks Mandarin Asli (Referensi)</label>
-                    <textarea id="raw-chinese-text" placeholder="Tempel teks Mandarin asli di sini untuk bahan panduan membaca..."></textarea>
+                    <label style="color: var(--accent); font-weight: bold;">Teks Mandarin Asli (Opsional)</label>
+                    <textarea id="raw-chinese-text" placeholder="Tempel teks Mandarin asli di sini sebagai acuan..."></textarea>
                 </div>
                 <div class="form-group">
-                    <label style="color: #4CAF50; font-weight: bold;">Hasil Terjemahan Manusia (Indonesia)</label>
-                    <textarea id="input-chapter-content" placeholder="Tulis atau tempel hasil terjemahan Bahasa Indonesia buatanmu di sini..."></textarea>
+                    <label style="color: #4CAF50; font-weight: bold;">Hasil Terjemahan Indonesia</label>
+                    <textarea id="input-chapter-content" placeholder="Ketik atau tempel hasil terjemahan Indonesia di sini..."></textarea>
                 </div>
             </div>
 
@@ -121,11 +118,11 @@
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('my_novels_manual')) || [];
+        let db = JSON.parse(localStorage.getItem('my_novels_manual_v2')) || [];
         let activeNovelId = null;
 
         function saveData() {
-            localStorage.setItem('my_novels_manual', JSON.stringify(db));
+            localStorage.setItem('my_novels_manual_v2', JSON.stringify(db));
             renderNovels();
         }
 
@@ -148,7 +145,7 @@
 
         function renderNovels() {
             const container = document.getElementById('novel-list');
-            container.innerHTML = db.length === 0 ? '<p style="color:var(--text-sub)">Belum ada novel. Klik + Novel untuk menambah.</p>' : '';
+            container.innerHTML = db.length === 0 ? '<p style="color:var(--text-sub)">Belum ada novel. Klik + Novel Baru untuk menambah.</p>' : '';
             db.forEach(n => {
                 container.innerHTML += `
                     <div class="card" onclick="openNovel(${n.id})">
@@ -244,5 +241,4 @@
         renderNovels();
     </script>
 </body>
-    </html>
-    
+</html>
