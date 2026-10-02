@@ -132,7 +132,6 @@
         let db = JSON.parse(localStorage.getItem('my_novels')) || [];
         let activeNovelId = null;
 
-        // Muat API Key saat pertama kali buka
         document.addEventListener("DOMContentLoaded", () => {
             const savedKey = localStorage.getItem('gemini_key') || '';
             document.getElementById('gemini-api-key').value = savedKey;
@@ -219,7 +218,6 @@
             showView('app-reader');
         }
 
-        /* --- SISTEM TERJEMAHAN AI BERBASIS PROMPT DENGAN GEMINI --- */
         async function translateWithAI() {
             const apiKey = document.getElementById('gemini-api-key').value.trim();
             const rawText = document.getElementById('raw-chinese-text').value.trim();
@@ -243,7 +241,6 @@
             btnTrans.disabled = true;
             resultBox.value = ""; 
 
-            // Potong teks agar tidak melebihi batas token AI per request (~1500 Karakter)
             const chunks = chunkText(rawText, 1500);
             let fullTranslatedText = "";
 
@@ -292,9 +289,8 @@
         }
 
         async function fetchGeminiTranslation(apiKey, textChunk) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             
-            // PROMPT KHUSUS NOVEL: Memaksa AI Menerjemahkan Secara Luwes & Natural
             const promptText = `
 Kamu adalah penerjemah novel Mandarin ke Bahasa Indonesia yang sangat handal.
 Tugasmu: Terjemahkan teks novel Mandarin berikut ke dalam Bahasa Indonesia dengan gaya cerita novel yang LUWES, NATURAL, PRESISI, dan ENAK DIBACA.
@@ -351,5 +347,5 @@ ${textChunk}`;
         renderNovels();
     </script>
 </body>
-    </html>
+                </html>
     
