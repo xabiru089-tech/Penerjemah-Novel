@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penerjemah Novel Mandarin (AI Luwes)</title>
+    <title>Asisten Penerjemah Novel (Tanpa API)</title>
     <style>
         :root {
             --bg-main: #121319;
@@ -28,26 +28,27 @@
         .card-title { font-weight: bold; font-size: 0.95rem; margin-bottom: 5px; color: #FFF; line-height: 1.2; }
         .card-info { font-size: 0.75rem; color: var(--text-sub); }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 15px; z-index: 100; }
-        .modal-content { background: var(--bg-card); width: 100%; max-width: 650px; border-radius: 10px; padding: 20px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: var(--bg-card); width: 100%; max-width: 800px; border-radius: 10px; padding: 20px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
         .form-group { margin-bottom: 12px; }
         label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--text-sub); }
         input, textarea { width: 100%; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 8px; border-radius: 6px; font-size: 0.9rem; }
         textarea { resize: vertical; min-height: 120px; }
         .reader-view { display: none; }
-        .reader-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+        .reader-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
         .reader-content { font-size: 1.05rem; line-height: 1.8; color: #D1D5DB; white-space: pre-wrap; }
-        .translate-box { background: var(--bg-main); border: 1px dashed var(--accent); padding: 12px; border-radius: 6px; margin-bottom: 12px; }
-        .status-msg { font-size: 0.8rem; color: #FFB74D; margin-top: 5px; display: none; font-weight: bold; }
-        .progress-bar { width: 100%; background: var(--border); height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden; display: none; }
-        .progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.3s; }
-        .api-box { background: #1E1A29; border: 1px solid var(--accent); padding: 10px; border-radius: 6px; margin-bottom: 12px; }
+        
+        /* Layout Editor Beda Kolom (Side-by-Side) */
+        .editor-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 600px) {
+            .editor-container { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
 
     <div id="app-home">
         <header>
-            <div class="logo">Arsip Novel AI</div>
+            <div class="logo">Arsip Novel Manual</div>
             <div class="btn-group">
                 <button class="secondary" onclick="exportData()">Export</button>
                 <button class="secondary" onclick="document.getElementById('file-input').click()">Import</button>
@@ -62,7 +63,7 @@
         <header>
             <button class="secondary" onclick="showView('app-home')">← Kembali</button>
             <div id="novel-detail-title" class="logo">Detail Novel</div>
-            <button onclick="openModal('modal-chapter')">+ Bab Terjemahan</button>
+            <button onclick="openModal('modal-chapter')">+ Tambah Bab Manual</button>
         </header>
         <div id="chapter-list" class="grid"></div>
     </div>
@@ -71,6 +72,7 @@
         <div class="reader-header">
             <button class="secondary" onclick="showView('app-novel')">← Daftar Bab</button>
             <h3 id="read-chapter-title">Judul Bab</h3>
+            <div></div>
         </div>
         <div id="read-chapter-content" class="reader-content"></div>
     </div>
@@ -90,38 +92,28 @@
         </div>
     </div>
 
-    <!-- Modal Chapter + AI Translator -->
+    <!-- Modal Chapter (Input Manual Tanpa API) -->
     <div id="modal-chapter" class="modal">
         <div class="modal-content">
-            <h3>Penerjemah AI Novel (Gemini 3.8 Flash)</h3><br>
+            <h3>Input & Penerjemahan Manual Bab</h3><br>
             
-            <div class="api-box">
-                <label style="color: #A78BFA; font-weight: bold;">Google Gemini API Key:</label>
-                <input type="password" id="gemini-api-key" placeholder="Tempel Gemini API Key kamu di sini..." onchange="saveApiKey()">
-                <span style="font-size:0.7rem; color: var(--text-sub);">*Dapatkan gratis di aistudio.google.com. Kunci tersimpan aman di browser-mu.</span>
-            </div>
-
-            <div class="translate-box">
-                <label style="color: var(--accent); font-weight: bold;">Teks Novel Mandarin (Satu Bab Full):</label>
-                <textarea id="raw-chinese-text" placeholder="Tempelkan seluruh teks Mandarin di sini..."></textarea>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                    <button type="button" id="btn-trans" onclick="translateWithAI()">Terjemahkan Gaya Novel Natural</button>
-                    <span id="trans-status" class="status-msg">Memproses AI...</span>
-                </div>
-                <div id="progress-container" class="progress-bar">
-                    <div id="progress-fill" class="progress-fill"></div>
-                </div>
-            </div>
-
             <div class="form-group">
                 <label>Judul Bab</label>
                 <input type="text" id="input-chapter-title" placeholder="Contoh: Bab 1: Kemunculan Kembali">
             </div>
-            <div class="form-group">
-                <label>Hasil Terjemahan Novel Mengalir (Aku-Kau)</label>
-                <textarea id="input-chapter-content" placeholder="Hasil terjemahan AI yang luwes dan enak dibaca akan muncul di sini..."></textarea>
+
+            <div class="editor-container">
+                <div class="form-group">
+                    <label style="color: var(--accent); font-weight: bold;">Teks Mandarin Asli (Referensi)</label>
+                    <textarea id="raw-chinese-text" placeholder="Tempel teks Mandarin asli di sini untuk bahan panduan membaca..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label style="color: #4CAF50; font-weight: bold;">Hasil Terjemahan Manusia (Indonesia)</label>
+                    <textarea id="input-chapter-content" placeholder="Tulis atau tempel hasil terjemahan Bahasa Indonesia buatanmu di sini..."></textarea>
+                </div>
             </div>
-            <div class="btn-group" style="justify-content: flex-end;">
+
+            <div class="btn-group" style="justify-content: flex-end; margin-top: 10px;">
                 <button class="secondary" onclick="closeModal('modal-chapter')">Batal</button>
                 <button onclick="saveChapter()">Simpan Bab</button>
             </div>
@@ -129,21 +121,11 @@
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('my_novels')) || [];
+        let db = JSON.parse(localStorage.getItem('my_novels_manual')) || [];
         let activeNovelId = null;
 
-        document.addEventListener("DOMContentLoaded", () => {
-            const savedKey = localStorage.getItem('gemini_key') || '';
-            document.getElementById('gemini-api-key').value = savedKey;
-        });
-
-        function saveApiKey() {
-            const key = document.getElementById('gemini-api-key').value.trim();
-            localStorage.setItem('gemini_key', key);
-        }
-
         function saveData() {
-            localStorage.setItem('my_novels', JSON.stringify(db));
+            localStorage.setItem('my_novels_manual', JSON.stringify(db));
             renderNovels();
         }
 
@@ -187,9 +169,16 @@
         function saveChapter() {
             const title = document.getElementById('input-chapter-title').value.trim();
             const content = document.getElementById('input-chapter-content').value.trim();
-            if(!title || !content) return;
+            const rawChinese = document.getElementById('raw-chinese-text').value.trim();
+            
+            if(!title || !content) {
+                alert('Judul Bab dan Hasil Terjemahan Indonesia tidak boleh kosong!');
+                return;
+            }
+
             const novel = db.find(n => n.id === activeNovelId);
-            novel.chapters.push({ id: Date.now(), title, content });
+            novel.chapters.push({ id: Date.now(), title, content, rawChinese });
+            
             document.getElementById('input-chapter-title').value = '';
             document.getElementById('input-chapter-content').value = '';
             document.getElementById('raw-chinese-text').value = '';
@@ -214,118 +203,25 @@
             const novel = db.find(n => n.id === activeNovelId);
             const chap = novel.chapters.find(c => c.id === chapId);
             document.getElementById('read-chapter-title').innerText = chap.title;
-            document.getElementById('read-chapter-content').innerText = chap.content;
-            showView('app-reader');
-        }
-
-        async function translateWithAI() {
-            const apiKey = document.getElementById('gemini-api-key').value.trim();
-            const rawText = document.getElementById('raw-chinese-text').value.trim();
-            const statusEl = document.getElementById('trans-status');
-            const btnTrans = document.getElementById('btn-trans');
-            const progressContainer = document.getElementById('progress-container');
-            const progressFill = document.getElementById('progress-fill');
-            const resultBox = document.getElementById('input-chapter-content');
-
-            if (!apiKey) {
-                alert('Masukkan Gemini API Key terlebih dahulu!');
-                return;
-            }
-            if (!rawText) {
-                alert('Masukkan teks Mandarin terlebih dahulu!');
-                return;
-            }
-
-            statusEl.style.display = "inline";
-            progressContainer.style.display = "block";
-            btnTrans.disabled = true;
-            resultBox.value = ""; 
-
-            const chunks = chunkText(rawText, 1500);
-            let fullTranslatedText = "";
-
-            for (let i = 0; i < chunks.length; i++) {
-                const percent = Math.round(((i + 1) / chunks.length) * 100);
-                progressFill.style.width = percent + "%";
-                statusEl.innerText = `AI Menerjemahkan... (${percent}%)`;
-
-                try {
-                    const translatedChunk = await fetchGeminiTranslation(apiKey, chunks[i]);
-                    fullTranslatedText += translatedChunk + "\n\n";
-                    resultBox.value = fullTranslatedText;
-                } catch (err) {
-                    alert("Error AI: " + err.message);
-                    break;
-                }
-
-                await new Promise(r => setTimeout(r, 500));
-            }
-
-            statusEl.innerText = "Selesai!";
-            setTimeout(() => { 
-                statusEl.style.display = "none"; 
-                progressContainer.style.display = "none";
-                progressFill.style.width = "0%";
-            }, 3000);
-
-            btnTrans.disabled = false;
-        }
-
-        function chunkText(text, maxLength) {
-            const paragraphs = text.split('\n');
-            const chunks = [];
-            let currentChunk = "";
-
-            for (let p of paragraphs) {
-                if ((currentChunk + p).length > maxLength) {
-                    if (currentChunk.trim()) chunks.push(currentChunk.trim());
-                    currentChunk = p + "\n";
-                } else {
-                    currentChunk += p + "\n";
-                }
-            }
-            if (currentChunk.trim()) chunks.push(currentChunk.trim());
-            return chunks;
-        }
-
-        async function fetchGeminiTranslation(apiKey, textChunk) {
-            // DIBAWAH INI ADALAH URL ENDPOINT MENGGUNAKAN GEMINI 3.8 FLASH
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
             
-            const promptText = `
-Kamu adalah penerjemah novel Mandarin ke Bahasa Indonesia yang sangat handal.
-Tugasmu: Terjemahkan teks novel Mandarin berikut ke dalam Bahasa Indonesia dengan gaya cerita novel yang LUWES, NATURAL, PRESISI, dan ENAK DIBACA.
-
-ATURAN WAJIB:
-1. Gunakan kata ganti dialog "Aku" dan "Kau" (bukan Anda/Saya, bukan lu/gua/gue/mbak/mas).
-2. Teks TIDAK BOLEH kaku atau diterjemahkan harfiah kata demi kata. Adaptasi struktur kalimat agar mengalir pas seperti terjemahan novel profesional.
-3. Pertahankan nama tokoh dan istilah budaya/martial arts/cultivation asli (contoh: Sekte, Qi, Cultivation, Dantian) tanpa diubah acak.
-4. Jangan menambahkan percakapan pembuka/penutup seperti "Berikut terjemahannya:". LANGSUNG berikan hasil terjemahan kodenya saja.
-
-Teks Mandarin yang harus diterjemahkan:
-${textChunk}`;
-
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: promptText }] }]
-                })
-            });
-
-            const data = await response.json();
-            if (data.error) {
-                throw new Error(data.error.message || "Gagal mengambil data dari AI");
+            let displayHtml = "";
+            if (chap.rawChinese) {
+                displayHtml += `<details style="margin-bottom:20px; background:var(--bg-card); padding:10px; border-radius:6px; border:1px solid var(--border);">
+                    <summary style="cursor:pointer; color:var(--accent); font-weight:bold;">Tampilkan Teks Mandarin Asli</summary>
+                    <p style="margin-top:10px; color:var(--text-sub); white-space:pre-wrap;">${chap.rawChinese}</p>
+                </details>`;
             }
+            displayHtml += `<div>${chap.content}</div>`;
 
-            return data.candidates[0].content.parts[0].text.trim();
+            document.getElementById('read-chapter-content').innerHTML = displayHtml;
+            showView('app-reader');
         }
 
         function exportData() {
             const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'cadangan_novel.json';
+            a.download = 'cadangan_novel_manual.json';
             a.click();
         }
 
