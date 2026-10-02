@@ -1,0 +1,2 @@
+# Penerjemah-Novel
+Menerjemahkan Novel
