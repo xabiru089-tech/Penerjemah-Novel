@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penerjemah & Arsip Novel Mandarin Formal</title>
+    <title>Penerjemah Novel Mandarin (AI Luwes)</title>
     <style>
         :root {
             --bg-main: #121319;
@@ -28,7 +28,7 @@
         .card-title { font-weight: bold; font-size: 0.95rem; margin-bottom: 5px; color: #FFF; line-height: 1.2; }
         .card-info { font-size: 0.75rem; color: var(--text-sub); }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 15px; z-index: 100; }
-        .modal-content { background: var(--bg-card); width: 100%; max-width: 600px; border-radius: 10px; padding: 20px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: var(--bg-card); width: 100%; max-width: 650px; border-radius: 10px; padding: 20px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
         .form-group { margin-bottom: 12px; }
         label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--text-sub); }
         input, textarea { width: 100%; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 8px; border-radius: 6px; font-size: 0.9rem; }
@@ -40,14 +40,14 @@
         .status-msg { font-size: 0.8rem; color: #FFB74D; margin-top: 5px; display: none; font-weight: bold; }
         .progress-bar { width: 100%; background: var(--border); height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden; display: none; }
         .progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.3s; }
-        .glossary-box { background: #181920; border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 10px; }
+        .api-box { background: #1E1A29; border: 1px solid var(--accent); padding: 10px; border-radius: 6px; margin-bottom: 12px; }
     </style>
 </head>
 <body>
 
     <div id="app-home">
         <header>
-            <div class="logo">Arsip Novel Mandarin</div>
+            <div class="logo">Arsip Novel AI</div>
             <div class="btn-group">
                 <button class="secondary" onclick="exportData()">Export</button>
                 <button class="secondary" onclick="document.getElementById('file-input').click()">Import</button>
@@ -90,28 +90,23 @@
         </div>
     </div>
 
-    <!-- Modal Chapter + Auto Translator -->
+    <!-- Modal Chapter + AI Translator -->
     <div id="modal-chapter" class="modal">
         <div class="modal-content">
-            <h3>Tambah / Menerjemahkan Bab Novel</h3><br>
+            <h3>Penerjemah AI Novel (Luwes & Natural)</h3><br>
             
-            <!-- Pengaturan Nama Tokoh & Istilah (Glosarium) -->
-            <div class="glossary-box">
-                <label style="color: var(--accent); font-weight: bold;">Kamus Nama Tokoh & Istilah Mandiri (Format: TeksAwal=Hasil)</label>
-                <textarea id="glossary-rules" style="min-height: 60px; font-size: 0.8rem;" placeholder="Contoh:
-Pangeran=Pangeran
-Ye Xiu=Ye Xiu
-Sect=Sekte
-Martial Arts=Seni Bela Diri"></textarea>
-                <span style="font-size:0.7rem; color: var(--text-sub);">*Gunakan ini untuk mengunci nama tokoh/istilah khusus agar tidak diterjemahkan salah oleh sistem.</span>
+            <div class="api-box">
+                <label style="color: #A78BFA; font-weight: bold;">Google Gemini API Key (Diperlukan agar terjemahan tidak kaku):</label>
+                <input type="password" id="gemini-api-key" placeholder="Tempel Gemini API Key kamu di sini..." onchange="saveApiKey()">
+                <span style="font-size:0.7rem; color: var(--text-sub);">*Dapatkan gratis di aistudio.google.com. Kunci tersimpan aman di browser-mu.</span>
             </div>
 
             <div class="translate-box">
-                <label style="color: var(--accent); font-weight: bold;">Penerjemah Mandarin Formal (Tanpa Slang)</label>
-                <textarea id="raw-chinese-text" placeholder="Tempelkan seluruh teks Mandarin satu bab penuh di sini..."></textarea>
+                <label style="color: var(--accent); font-weight: bold;">Teks Novel Mandarin (Satu Bab Full):</label>
+                <textarea id="raw-chinese-text" placeholder="Tempelkan seluruh teks Mandarin di sini..."></textarea>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                    <button type="button" id="btn-trans" onclick="translateLongText()">Terjemahkan Formal</button>
-                    <span id="trans-status" class="status-msg">Memproses...</span>
+                    <button type="button" id="btn-trans" onclick="translateWithAI()">Terjemahkan Gaya Novel Natural</button>
+                    <span id="trans-status" class="status-msg">Memproses AI...</span>
                 </div>
                 <div id="progress-container" class="progress-bar">
                     <div id="progress-fill" class="progress-fill"></div>
@@ -123,8 +118,8 @@ Martial Arts=Seni Bela Diri"></textarea>
                 <input type="text" id="input-chapter-title" placeholder="Contoh: Bab 1: Kemunculan Kembali">
             </div>
             <div class="form-group">
-                <label>Hasil Terjemahan Baku & Rapi</label>
-                <textarea id="input-chapter-content" placeholder="Hasil terjemahan akan gabung otomatis di sini..."></textarea>
+                <label>Hasil Terjemahan Novel Mengalir (Aku-Kau)</label>
+                <textarea id="input-chapter-content" placeholder="Hasil terjemahan AI yang luwes dan enak dibaca akan muncul di sini..."></textarea>
             </div>
             <div class="btn-group" style="justify-content: flex-end;">
                 <button class="secondary" onclick="closeModal('modal-chapter')">Batal</button>
@@ -136,6 +131,17 @@ Martial Arts=Seni Bela Diri"></textarea>
     <script>
         let db = JSON.parse(localStorage.getItem('my_novels')) || [];
         let activeNovelId = null;
+
+        // Muat API Key saat pertama kali buka
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedKey = localStorage.getItem('gemini_key') || '';
+            document.getElementById('gemini-api-key').value = savedKey;
+        });
+
+        function saveApiKey() {
+            const key = document.getElementById('gemini-api-key').value.trim();
+            localStorage.setItem('gemini_key', key);
+        }
 
         function saveData() {
             localStorage.setItem('my_novels', JSON.stringify(db));
@@ -213,8 +219,9 @@ Martial Arts=Seni Bela Diri"></textarea>
             showView('app-reader');
         }
 
-        /* --- PENERJEMAH TEKS PANJANG DENGAN PEMERIKSAAN BAHASA FORMAL & NAMA TOKOH --- */
-        async function translateLongText() {
+        /* --- SISTEM TERJEMAHAN AI BERBASIS PROMPT DENGAN GEMINI --- */
+        async function translateWithAI() {
+            const apiKey = document.getElementById('gemini-api-key').value.trim();
             const rawText = document.getElementById('raw-chinese-text').value.trim();
             const statusEl = document.getElementById('trans-status');
             const btnTrans = document.getElementById('btn-trans');
@@ -222,8 +229,12 @@ Martial Arts=Seni Bela Diri"></textarea>
             const progressFill = document.getElementById('progress-fill');
             const resultBox = document.getElementById('input-chapter-content');
 
-            if(!rawText) {
-                alert('Silakan masukkan teks Mandarin terlebih dahulu!');
+            if (!apiKey) {
+                alert('Masukkan Gemini API Key terlebih dahulu!');
+                return;
+            }
+            if (!rawText) {
+                alert('Masukkan teks Mandarin terlebih dahulu!');
                 return;
             }
 
@@ -232,31 +243,28 @@ Martial Arts=Seni Bela Diri"></textarea>
             btnTrans.disabled = true;
             resultBox.value = ""; 
 
-            const chunks = chunkText(rawText, 450);
+            // Potong teks agar tidak melebihi batas token AI per request (~1500 Karakter)
+            const chunks = chunkText(rawText, 1500);
             let fullTranslatedText = "";
 
             for (let i = 0; i < chunks.length; i++) {
                 const percent = Math.round(((i + 1) / chunks.length) * 100);
                 progressFill.style.width = percent + "%";
-                statusEl.innerText = `Menerjemahkan... (${percent}%)`;
+                statusEl.innerText = `AI Menerjemahkan... (${percent}%)`;
 
                 try {
-                    const translatedChunk = await fetchTranslation(chunks[i]);
+                    const translatedChunk = await fetchGeminiTranslation(apiKey, chunks[i]);
                     fullTranslatedText += translatedChunk + "\n\n";
-                    
-                    // Bersihkan bahasa gaul & Terapkan Glosarium Nama Tokoh
-                    let cleanedText = postProcessNovelTranslation(fullTranslatedText);
-                    cleanedText = applyGlossaryRules(cleanedText);
-                    
-                    resultBox.value = cleanedText;
+                    resultBox.value = fullTranslatedText;
                 } catch (err) {
-                    console.error("Error pada chunk:", err);
+                    alert("Error AI: " + err.message);
+                    break;
                 }
 
-                await new Promise(r => setTimeout(r, 300));
+                await new Promise(r => setTimeout(r, 500));
             }
 
-            statusEl.innerText = "Selesai 100%!";
+            statusEl.innerText = "Selesai!";
             setTimeout(() => { 
                 statusEl.style.display = "none"; 
                 progressContainer.style.display = "none";
@@ -283,79 +291,37 @@ Martial Arts=Seni Bela Diri"></textarea>
             return chunks;
         }
 
-        async function fetchTranslation(textChunk) {
-            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=id&dt=t&q=${encodeURIComponent(textChunk)}`;
-            const res = await fetch(url);
-            const data = await res.json();
-            let text = "";
-            if (data && data[0]) {
-                data[0].forEach(item => { if (item[0]) text += item[0]; });
-            }
-            return text;
-        }
+        async function fetchGeminiTranslation(apiKey, textChunk) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+            
+            // PROMPT KHUSUS NOVEL: Memaksa AI Menerjemahkan Secara Luwes & Natural
+            const promptText = `
+Kamu adalah penerjemah novel Mandarin ke Bahasa Indonesia yang sangat handal.
+Tugasmu: Terjemahkan teks novel Mandarin berikut ke dalam Bahasa Indonesia dengan gaya cerita novel yang LUWES, NATURAL, PRESISI, dan ENAK DIBACA.
 
-        /* PERBAIKAN TOTAL GAYA BAHASA NOVEL (FORMAL NOVEL NO-SLANG) */
-        function postProcessNovelTranslation(text) {
-            return text
-                // Menghapus kata panggilan gaul Indonesia
-                .replace(/\bmbak\b/gi, "")
-                .replace(/\bmas\b/gi, "")
-                .replace(/\bbang\b/gi, "")
-                .replace(/\bbro\b/gi, "")
-                .replace(/\bsis\b/gi, "")
-                
-                // Menghapus kata ganti gaul
-                .replace(/\bgue\b/gi, "Saya")
-                .replace(/\bgwe\b/gi, "Saya")
-                .replace(/\bgua\b/gi, "Saya")
-                .replace(/\bloe\b/gi, "Anda")
-                .replace(/\blu\b/gi, "Anda")
-                .replace(/\bdia orang\b/gi, "mereka")
-                
-                // Menghapus kata hubung/keterangan informal
-                .replace(/\bgak\b/gi, "tidak")
-                .replace(/\bnggak\b/gi, "tidak")
-                .replace(/\bngak\b/gi, "tidak")
-                .replace(/\bbanget\b/gi, "sangat")
-                .replace(/\bbisa aja\b/gi, "dapat")
-                .replace(/\bcuma\b/gi, "hanya")
-                .replace(/\bcewek\b/gi, "gadis")
-                .replace(/\bcowok\b/gi, "pria")
-                .replace(/\bkalo\b/gi, "jika")
-                .replace(/\bkalau\b/gi, "jika")
-                .replace(/\bbakal\b/gi, "akan")
-                .replace(/\budah\b/gi, "sudah")
-                .replace(/\bdah\b/gi, "sudah")
-                .replace(/\bgimana\b/gi, "bagaimana")
-                .replace(/\bkenapa\b/gi, "mengapa")
-                .replace(/\baja\b/gi, "saja")
-                .replace(/\bbelom\b/gi, "belum")
-                
-                // Merapikan tanda baca & paragraf
-                .replace(/ ,/g, ",")
-                .replace(/ \./g, ".")
-                .replace(/\n\s*\n/g, '\n\n');
-        }
+ATURAN WAJIB:
+1. Gunakan kata ganti dialog "Aku" dan "Kau" (bukan Anda/Saya, bukan lu/gua/gue/mbak/mas).
+2. Teks TIDAK BOLEH kaku atau diterjemahkan harfiah kata demi kata. Adaptasi struktur kalimat agar mengalir pas seperti terjemahan novel profesional.
+3. Pertahankan nama tokoh dan istilah budaya/martial arts/cultivation asli (contoh: Sekte, Qi, Cultivation, Dantian) tanpa diubah acak.
+4. Jangan menambahkan percakapan pembuka/penutup seperti "Berikut terjemahannya:". LANGSUNG berikan hasil terjemahan kodenya saja.
 
-        /* PENERAPAN KAMUS NAMA TOKOH & ISTILAH DARI USER */
-        function applyGlossaryRules(text) {
-            const rulesRaw = document.getElementById('glossary-rules').value.trim();
-            if (!rulesRaw) return text;
+Teks Mandarin yang harus diterjemahkan:
+${textChunk}`;
 
-            const lines = rulesRaw.split('\n');
-            lines.forEach(line => {
-                const parts = line.split('=');
-                if (parts.length === 2) {
-                    const original = parts[0].trim();
-                    const replacement = parts[1].trim();
-                    if (original && replacement) {
-                        const regex = new RegExp(original, 'gi');
-                        text = text.replace(regex, replacement);
-                    }
-                }
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: promptText }] }]
+                })
             });
 
-            return text;
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(data.error.message || "Gagal mengambil data dari AI");
+            }
+
+            return data.candidates[0].content.parts[0].text.trim();
         }
 
         function exportData() {
@@ -385,5 +351,5 @@ Martial Arts=Seni Bela Diri"></textarea>
         renderNovels();
     </script>
 </body>
-                </html>
+    </html>
     
