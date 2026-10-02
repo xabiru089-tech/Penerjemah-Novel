@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penerjemah & Pembaca Novel Otomatis</title>
+    <title>Penerjemah Novel Otomatis</title>
     <style>
         :root {
             --bg-main: #121319;
@@ -28,19 +28,16 @@
         .card-title { font-weight: bold; font-size: 0.95rem; margin-bottom: 5px; color: #FFF; line-height: 1.2; }
         .card-info { font-size: 0.75rem; color: var(--text-sub); }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 15px; z-index: 100; }
-        .modal-content { background: var(--bg-card); width: 100%; max-width: 800px; border-radius: 10px; padding: 20px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-size: 0.8rem; margin-bottom: 5px; color: var(--text-sub); }
-        input, textarea { width: 100%; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 8px; border-radius: 6px; font-size: 0.9rem; }
-        textarea { resize: vertical; min-height: 140px; }
+        .modal-content { background: var(--bg-card); width: 100%; max-width: 700px; border-radius: 10px; padding: 20px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-sub); }
+        input, textarea { width: 100%; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 10px; border-radius: 6px; font-size: 0.9rem; }
+        textarea { resize: vertical; min-height: 200px; }
         .reader-view { display: none; }
         .reader-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
         .reader-content { font-size: 1.05rem; line-height: 1.8; color: #D1D5DB; white-space: pre-wrap; }
-        .editor-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .status-msg { font-size: 0.8rem; color: var(--accent); margin-top: 5px; min-height: 18px; }
-        @media (max-width: 600px) {
-            .editor-container { grid-template-columns: 1fr; }
-        }
+        .status-msg { font-size: 0.85rem; color: #FFB74D; margin-top: 8px; font-weight: bold; }
+        .btn-large { width: 100%; padding: 12px; font-size: 0.95rem; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -49,8 +46,8 @@
         <header>
             <div class="logo">Arsip Novel Terjemahan</div>
             <div class="btn-group">
-                <button class="secondary" onclick="exportData()">Export</button>
-                <button class="secondary" onclick="document.getElementById('file-input').click()">Import</button>
+                <button class="secondary" onclick="exportData()">Export Data</button>
+                <button class="secondary" onclick="document.getElementById('file-input').click()">Import Data</button>
                 <input type="file" id="file-input" style="display:none" onchange="importData(event)">
                 <button onclick="openModal('modal-novel')">+ Novel Baru</button>
             </div>
@@ -62,7 +59,7 @@
         <header>
             <button class="secondary" onclick="showView('app-home')">← Kembali</button>
             <div id="novel-detail-title" class="logo">Detail Novel</div>
-            <button onclick="openModal('modal-chapter')">+ Tambah Bab</button>
+            <button onclick="openModal('modal-chapter')">+ Tambah Bab Baru</button>
         </header>
         <div id="chapter-list" class="grid"></div>
     </div>
@@ -82,7 +79,7 @@
             <h3>Tambah Judul Novel</h3><br>
             <div class="form-group">
                 <label>Judul Novel</label>
-                <input type="text" id="input-novel-title" placeholder="Masukkan judul novel...">
+                <input type="text" id="input-novel-title" placeholder="Contoh: Martial Peak">
             </div>
             <div class="btn-group" style="justify-content: flex-end;">
                 <button class="secondary" onclick="closeModal('modal-novel')">Batal</button>
@@ -91,7 +88,7 @@
         </div>
     </div>
 
-    <!-- Modal Chapter -->
+    <!-- Modal Chapter (OTOMATIS TANPA KOTAK TEKS INDONESIA) -->
     <div id="modal-chapter" class="modal">
         <div class="modal-content">
             <h3>Input & Terjemahkan Bab</h3><br>
@@ -101,34 +98,29 @@
                 <input type="text" id="input-chapter-title" placeholder="Contoh: Bab 1: Kemunculan Kembali">
             </div>
 
-            <div class="editor-container">
-                <div class="form-group">
-                    <label style="color: var(--accent); font-weight: bold;">Teks Mandarin (Asli)</label>
-                    <textarea id="raw-chinese-text" placeholder="Tempel teks Mandarin di sini..."></textarea>
-                    <button type="button" id="btn-translate" onclick="autoTranslateProcess()" style="margin-top: 8px; width: 100%;">
-                        ⚡ Terjemahkan Otomatis
-                    </button>
-                    <div id="translate-status" class="status-msg"></div>
-                </div>
-                <div class="form-group">
-                    <label style="color: #4CAF50; font-weight: bold;">Hasil Terjemahan Bahasa Indonesia</label>
-                    <textarea id="input-chapter-content" placeholder="Hasil terjemahan akan muncul di sini dan bisa kamu edit kembali jika perlu..."></textarea>
-                </div>
+            <div class="form-group">
+                <label style="color: var(--accent); font-weight: bold;">Tempel Teks Mandarin Di Sini</label>
+                <textarea id="raw-chinese-text" placeholder="Tempel seluruh paragraf Mandarin di sini..."></textarea>
             </div>
 
-            <div class="btn-group" style="justify-content: flex-end; margin-top: 10px;">
+            <button type="button" class="btn-large" id="btn-translate" onclick="processAndSaveChapter()">
+                ⚡ Terjemahkan & Simpan Bab Otomatis
+            </button>
+            
+            <div id="translate-status" class="status-msg"></div>
+
+            <div class="btn-group" style="justify-content: flex-end; margin-top: 15px;">
                 <button class="secondary" onclick="closeModal('modal-chapter')">Batal</button>
-                <button onclick="saveChapter()">Simpan Bab</button>
             </div>
         </div>
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('my_novels_auto_v1')) || [];
+        let db = JSON.parse(localStorage.getItem('my_novels_auto_v2')) || [];
         let activeNovelId = null;
 
         function saveData() {
-            localStorage.setItem('my_novels_auto_v1', JSON.stringify(db));
+            localStorage.setItem('my_novels_auto_v2', JSON.stringify(db));
             renderNovels();
         }
 
@@ -138,9 +130,12 @@
         }
 
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function closeModal(id) { 
+            document.getElementById(id).style.display = 'none'; 
+            document.getElementById('translate-status').innerText = '';
+        }
 
-        // --- SISTEM TERJEMAHAN OTOMATIS TANPA KUNCI API ---
+        // --- SISTEM TERJEMAHAN OTOMATIS BEBAS API KEY ---
         async function translateChunk(text) {
             const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=id&dt=t&q=${encodeURIComponent(text)}`;
             const res = await fetch(url);
@@ -156,30 +151,34 @@
             return translated;
         }
 
-        // Penyesuaian kata/kosakata novel secara otomatis
+        // Pembersihan & Penyelarasan Gaya Bahasa Novel Baku
         function sanitizeNovelStyle(text) {
             return text
                 .replace(/\b(kamu|anda)\b/gi, 'kau')
                 .replace(/\b(saya|hamba)\b/gi, 'aku')
-                .replace(/\b(bro|sis|mas|mbak|bang|bung|lo|gue)\b/gi, '')
-                .replace(/  +/g, ' '); // Hapus spasi berlebih
+                .replace(/\b(mas|mbak|bang|bung|lo|gue|bro|sis)\b/gi, '')
+                .replace(/  +/g, ' ');
         }
 
-        async function autoTranslateProcess() {
+        async function processAndSaveChapter() {
+            const title = document.getElementById('input-chapter-title').value.trim();
             const rawText = document.getElementById('raw-chinese-text').value.trim();
             const statusEl = document.getElementById('translate-status');
             const btnTranslate = document.getElementById('btn-translate');
-            
+
+            if (!title) {
+                alert('Isi Judul Bab terlebih dahulu!');
+                return;
+            }
             if (!rawText) {
                 alert('Tempelkan teks Mandarin terlebih dahulu!');
                 return;
             }
 
-            statusEl.innerText = 'Menerjemahkan... Mohon tunggu.';
+            statusEl.innerText = '⏳ Sedang menerjemahkan secara otomatis... Mohon tunggu sebentar.';
             btnTranslate.disabled = true;
 
             try {
-                // Bagi paragraf agar penerjemahan stabil & tidak terpotong
                 const paragraphs = rawText.split('\n');
                 let result = [];
 
@@ -193,11 +192,29 @@
                     result.push(translatedP);
                 }
 
-                document.getElementById('input-chapter-content').value = result.join('\n');
-                statusEl.innerText = '✅ Terjemahan selesai!';
+                const translatedContent = result.join('\n');
+
+                // Simpan langsung ke database
+                const novel = db.find(n => n.id === activeNovelId);
+                novel.chapters.push({ 
+                    id: Date.now(), 
+                    title: title, 
+                    content: translatedContent, 
+                    rawChinese: rawText 
+                });
+
+                saveData();
+                renderChapters();
+
+                // Bersihkan form
+                document.getElementById('input-chapter-title').value = '';
+                document.getElementById('raw-chinese-text').value = '';
+                closeModal('modal-chapter');
+
+                alert('✅ Bab berhasil diterjemahkan dan disimpan!');
             } catch (err) {
                 console.error(err);
-                statusEl.innerText = '❌ Terjadi kesalahan saat menerjemahkan.';
+                statusEl.innerText = '❌ Terjadi kesalahan koneksi saat menerjemahkan.';
             } finally {
                 btnTranslate.disabled = false;
             }
@@ -230,28 +247,6 @@
             document.getElementById('novel-detail-title').innerText = novel.title;
             renderChapters();
             showView('app-novel');
-        }
-
-        function saveChapter() {
-            const title = document.getElementById('input-chapter-title').value.trim();
-            const content = document.getElementById('input-chapter-content').value.trim();
-            const rawChinese = document.getElementById('raw-chinese-text').value.trim();
-            
-            if(!title || !content) {
-                alert('Judul Bab dan Hasil Terjemahan tidak boleh kosong!');
-                return;
-            }
-
-            const novel = db.find(n => n.id === activeNovelId);
-            novel.chapters.push({ id: Date.now(), title, content, rawChinese });
-            
-            document.getElementById('input-chapter-title').value = '';
-            document.getElementById('input-chapter-content').value = '';
-            document.getElementById('raw-chinese-text').value = '';
-            document.getElementById('translate-status').innerText = '';
-            closeModal('modal-chapter');
-            saveData();
-            renderChapters();
         }
 
         function renderChapters() {
@@ -311,5 +306,4 @@
         renderNovels();
     </script>
 </body>
-                        </html>
-                        
+</html>
