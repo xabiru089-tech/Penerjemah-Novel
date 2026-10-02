@@ -21,6 +21,7 @@
         .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
         button { background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 0.85rem; }
         button:hover { background: var(--accent-hover); }
+        button:disabled { background: #4A4D5D; cursor: not-allowed; }
         button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-top: 15px; }
         .card { background: var(--bg-card); border-radius: 8px; padding: 10px; border: 1px solid var(--border); display: flex; flex-direction: column; cursor: pointer; }
@@ -37,6 +38,8 @@
         .reader-content { font-size: 1.05rem; line-height: 1.8; color: #D1D5DB; white-space: pre-wrap; }
         .translate-box { background: var(--bg-main); border: 1px dashed var(--accent); padding: 12px; border-radius: 6px; margin-bottom: 12px; }
         .status-msg { font-size: 0.8rem; color: #FFB74D; margin-top: 5px; display: none; font-weight: bold; }
+        .progress-bar { width: 100%; background: var(--border); height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden; display: none; }
+        .progress-fill { width: 0%; height: 100%; background: var(--accent); transition: width 0.3s; }
     </style>
 </head>
 <body>
@@ -92,11 +95,14 @@
             <h3>Tambah / Menerjemahkan Bab Novel</h3><br>
             
             <div class="translate-box">
-                <label style="color: var(--accent); font-weight: bold;">Penerjemah Mandarin ➔ Indonesia Formal</label>
-                <textarea id="raw-chinese-text" placeholder="Tempelkan teks Mandarin (Sederhana/Tradisional) di sini..."></textarea>
+                <label style="color: var(--accent); font-weight: bold;">Penerjemah Otomatis Teks Panjang</label>
+                <textarea id="raw-chinese-text" placeholder="Tempelkan seluruh teks Mandarin satu bab penuh di sini..."></textarea>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-                    <button type="button" id="btn-trans" onclick="translateMandarinToIndo()">Terjemahkan Teks</button>
-                    <span id="trans-status" class="status-msg">Proses menerjemahkan...</span>
+                    <button type="button" id="btn-trans" onclick="translateLongText()">Terjemahkan Semua</button>
+                    <span id="trans-status" class="status-msg">Memproses...</span>
+                </div>
+                <div id="progress-container" class="progress-bar">
+                    <div id="progress-fill" class="progress-fill"></div>
                 </div>
             </div>
 
@@ -105,8 +111,8 @@
                 <input type="text" id="input-chapter-title" placeholder="Contoh: Bab 1: Kemunculan Kembali">
             </div>
             <div class="form-group">
-                <label>Hasil Terjemahan</label>
-                <textarea id="input-chapter-content" placeholder="Hasil terjemahan akan otomatis masuk ke sini..."></textarea>
+                <label>Hasil Terjemahan Lengkap</label>
+                <textarea id="input-chapter-content" placeholder="Hasil terjemahan akan gabung otomatis di sini..."></textarea>
             </div>
             <div class="btn-group" style="justify-content: flex-end;">
                 <button class="secondary" onclick="closeModal('modal-chapter')">Batal</button>
@@ -195,65 +201,97 @@
             showView('app-reader');
         }
 
-        /* --- LOGIKA PENERJEMAH (BEBAS CORS & BEBAS BLOKIR) --- */
-        async function translateMandarinToIndo() {
+        /* --- LOGIKA PENERJEMAH OTOMATIS TEKS PANJANG (AUTO-CHUNKING) --- */
+        async function translateLongText() {
             const rawText = document.getElementById('raw-chinese-text').value.trim();
             const statusEl = document.getElementById('trans-status');
             const btnTrans = document.getElementById('btn-trans');
-            
+            const progressContainer = document.getElementById('progress-container');
+            const progressFill = document.getElementById('progress-fill');
+            const resultBox = document.getElementById('input-chapter-content');
+
             if(!rawText) {
                 alert('Silakan masukkan teks Mandarin terlebih dahulu!');
                 return;
             }
 
-            statusEl.innerText = "Sedang menerjemahkan...";
             statusEl.style.display = "inline";
+            progressContainer.style.display = "block";
             btnTrans.disabled = true;
+            resultBox.value = ""; // Kosongkan box hasil dulu
 
-            try {
-                // Menggunakan Endpoint API Proxy Publik yang aman CORS
-                const apiUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(rawText)}&langpair=zh|id`;
-                const response = await fetch(apiUrl);
-                const data = await response.json();
-                
-                let translatedResult = '';
-                if (data && data.responseData && data.responseData.translatedText) {
-                    translatedResult = data.responseData.translatedText;
-                } else {
-                    throw new Error("Gagal mengambil respon terjemahan");
-                }
+            // Potong teks berdasarkan tanda titik/baris baru agar kalimat tidak terputus (Maksimal ~400 Karakter per potong)
+            const chunks = chunkText(rawText, 400);
+            let fullTranslatedText = "";
 
-                // Membersihkan kata slang & menyesuaikan budaya novel Mandarin
-                translatedResult = postProcessNovelTranslation(translatedResult);
+            for (let i = 0; i < chunks.length; i++) {
+                // Update Progress Bar
+                const percent = Math.round(((i + 1) / chunks.length) * 100);
+                progressFill.style.width = percent + "%";
+                statusEl.innerText = `Menerjemahkan... (${percent}%)`;
 
-                document.getElementById('input-chapter-content').value = translatedResult;
-                statusEl.innerText = "Selesai!";
-                setTimeout(() => { statusEl.style.display = "none"; }, 2000);
-
-            } catch (error) {
-                // Cadangan API kedua jika API pertama sibuk
                 try {
-                    const fallbackUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=id&dt=t&q=${encodeURIComponent(rawText)}`;
-                    const res2 = await fetch(fallbackUrl);
-                    const data2 = await res2.json();
-                    let translatedResult2 = '';
-                    if (data2 && data2[0]) {
-                        data2[0].forEach(item => { if (item[0]) translatedResult2 += item[0]; });
-                    }
-                    translatedResult2 = postProcessNovelTranslation(translatedResult2);
-                    document.getElementById('input-chapter-content').value = translatedResult2;
-                    statusEl.innerText = "Selesai!";
-                    setTimeout(() => { statusEl.style.display = "none"; }, 2000);
-                } catch (err2) {
-                    statusEl.innerText = "Gagal menerjemahkan! Periksa koneksi internet.";
-                    alert("Gagal terhubung ke server penerjemah. Coba potong teks jadi lebih pendek.");
+                    const translatedChunk = await fetchTranslation(chunks[i]);
+                    fullTranslatedText += translatedChunk + "\n\n";
+                    // Tampilkan secara real-time ke box hasil
+                    resultBox.value = postProcessNovelTranslation(fullTranslatedText);
+                } catch (err) {
+                    console.error("Gagal di bagian:", chunks[i]);
                 }
-            } finally {
-                btnTrans.disabled = false;
+
+                // Beri jeda 300ms agar server tidak memblokir koneksi
+                await new Promise(r => setTimeout(r, 300));
+            }
+
+            statusEl.innerText = "Selesai 100%!";
+            setTimeout(() => { 
+                statusEl.style.display = "none"; 
+                progressContainer.style.display = "none";
+                progressFill.style.width = "0%";
+            }, 3000);
+
+            btnTrans.disabled = false;
+        }
+
+        // Fungsi membagi teks panjang jadi beberapa bagian tanpa memotong kalimat
+        function chunkText(text, maxLength) {
+            const paragraphs = text.split('\n');
+            const chunks = [];
+            let currentChunk = "";
+
+            for (let p of paragraphs) {
+                if ((currentChunk + p).length > maxLength) {
+                    if (currentChunk.trim()) chunks.push(currentChunk.trim());
+                    currentChunk = p + "\n";
+                } else {
+                    currentChunk += p + "\n";
+                }
+            }
+            if (currentChunk.trim()) chunks.push(currentChunk.trim());
+            return chunks;
+        }
+
+        // Fetching API dengan Fallback
+        async function fetchTranslation(textChunk) {
+            const url1 = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=id&dt=t&q=${encodeURIComponent(textChunk)}`;
+            try {
+                const res = await fetch(url1);
+                const data = await res.json();
+                let text = "";
+                if (data && data[0]) {
+                    data[0].forEach(item => { if (item[0]) text += item[0]; });
+                }
+                return text;
+            } catch (e) {
+                // Alternatif API 2
+                const url2 = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textChunk)}&langpair=zh|id`;
+                const res2 = await fetch(url2);
+                const data2 = await res2.json();
+                return data2.responseData ? data2.responseData.translatedText : textChunk;
             }
         }
 
-        /* Pembersihan Kata Slang & Penyesuaian Budaya Novel Mandarin */
+        /* Rapikan kata-kata gaul/slang agar kalimat novel lebih formal */
         function postProcessNovelTranslation(text) {
             return text
                 .replace(/\bgak\b/gi, "tidak")
@@ -265,7 +303,6 @@
                 .replace(/\bcowok\b/gi, "pria")
                 .replace(/\bLu\b/gi, "Anda")
                 .replace(/\bGua\b/gi, "Saya")
-                .replace(/\bGwe\b/gi, "Saya")
                 .replace(/\bKalo\b/gi, "Jika")
                 .replace(/\bBakal\b/gi, "Akan")
                 .replace(/\bUdah\b/gi, "Sudah")
