@@ -1,168 +1,363 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pengatur Paragraf & Dialog Otomatis</title>
-  <style>
-    :root {
-      --primary-color: #2c3e50;
-      --bg-color: #f8f9fa;
-      --card-bg: #ffffff;
-      --border-color: #e0e0e0;
-    }
-
-    body {
-      font-family: 'Segoe UI', Georgia, serif;
-      background-color: var(--bg-color);
-      color: #333;
-      margin: 0;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 800px;
-      background: var(--card-bg);
-      padding: 30px;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    h1 {
-      text-align: center;
-      color: var(--primary-color);
-      margin-bottom: 20px;
-      font-size: 1.8rem;
-    }
-
-    textarea {
-      width: 100%;
-      height: 200px;
-      padding: 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      font-size: 1rem;
-      font-family: inherit;
-      resize: vertical;
-      box-sizing: border-box;
-      margin-bottom: 15px;
-    }
-
-    textarea:focus {
-      outline: none;
-      border-color: #3498db;
-    }
-
-    /* Area Output Hasil */
-    .output-card {
-      margin-top: 30px;
-      padding: 25px;
-      border-top: 2px dashed var(--border-color);
-      background-color: #fff;
-    }
-
-    /* Styling Otomatis untuk Judul Bab */
-    .output-card h2.judul-bab {
-      text-align: center;
-      color: var(--primary-color);
-      font-size: 1.5rem;
-      margin-top: 10px;
-      margin-bottom: 25px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    /* Styling Otomatis untuk Narasi Biasa (Jarak Renggang) */
-    .output-card p.narasi {
-      margin-top: 0;
-      margin-bottom: 1.25em; /* Jarak antar paragraf biasa */
-      line-height: 1.7;
-      text-indent: 2em; /* Indentasi awal paragraf */
-      text-align: justify;
-    }
-
-    /* Styling Otomatis untuk Dialog (Jarak Rapat) */
-    .output-card p.dialog {
-      margin-top: 0;
-      margin-bottom: 0.35em; /* Jarak antar dialog dibuat rapat */
-      line-height: 1.5;
-      text-indent: 0;
-      color: #1a1a1a;
-    }
-
-    /* Memberi jarak ekstra setelah baris dialog terakhir masuk ke narasi baru */
-    .output-card p.dialog + p.narasi {
-      margin-top: 1em;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koleksi Novel Pribadi</title>
+    <style>
+        :root {
+            --bg: #121212; --card: #1e1e1e; --text: #e0e0e0;
+            --sub: #a0a0a0; --accent: #2563eb; --border: #333;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+        header { background: var(--card); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+        .brand { font-weight: bold; font-size: 1.2rem; cursor: pointer; color: #fff; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        button { background: var(--accent); color: #fff; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
+        button:hover { opacity: 0.9; }
+        button.sec { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        button.danger { background: #dc2626; }
+        main { padding: 20px; max-width: 900px; width: 100%; margin: 0 auto; flex: 1; }
+        .stats { display: flex; gap: 20px; background: var(--card); padding: 12px; border-radius: 6px; margin-bottom: 16px; border: 1px solid var(--border); font-size: 0.85rem; color: var(--sub); }
+        .stats b { color: #fff; }
+        .search { margin-bottom: 16px; }
+        .search input, input[type="text"], textarea, select { width: 100%; padding: 10px; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; outline: none; font-family: inherit; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; }
+        .card { background: var(--card); border-radius: 6px; border: 1px solid var(--border); overflow: hidden; cursor: pointer; display: flex; flex-direction: column; }
+        .card-cover { width: 100%; height: 180px; object-fit: cover; background: #000; }
+        .card-body { padding: 10px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .card-title { font-weight: 600; font-size: 0.9rem; color: #fff; }
+        .card-sub { font-size: 0.75rem; color: var(--sub); }
+        .novel-header { display: flex; gap: 16px; background: var(--card); padding: 16px; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; }
+        .novel-cover { width: 110px; height: 150px; object-fit: cover; border-radius: 4px; background: #000; }
+        .chap-list { display: flex; flex-direction: column; gap: 8px; }
+        .chap-item { background: var(--card); padding: 12px; border-radius: 6px; border: 1px solid var(--border); display: flex; justify-content: space-between; cursor: pointer; }
+        
+        /* READER MODE STYLING (NARASI vs DIALOG) */
+        .reader-box { padding: 24px; border-radius: 6px; border: 1px solid var(--border); line-height: 1.8; font-size: 1.1rem; margin-top: 16px; }
+        .reader-box p.narasi { margin-bottom: 1.25em; text-align: justify; }
+        .reader-box p.dialog { margin-bottom: 0.35em; color: #ffffff; }
+        .reader-box p.dialog + p.narasi { margin-top: 1em; }
+        
+        .theme-dark { background: #1e1e1e; color: #e0e0e0; }
+        .theme-light { background: #f8f9fa; color: #212529; }
+        .theme-sepia { background: #fbf0d9; color: #5f4b32; }
+        .theme-sepia p.dialog { color: #3b2d1d; }
+        
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 16px; z-index: 100; }
+        .modal-body { background: var(--card); width: 100%; max-width: 500px; padding: 20px; border-radius: 8px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
+        .form-g { margin-bottom: 12px; }
+        .form-g label { display: block; font-size: 0.8rem; color: var(--sub); margin-bottom: 4px; }
+        .view { display: none; }
+    </style>
 </head>
 <body>
 
-  <div class="container">
-    <h1>Format Naskah Otomatis</h1>
-    <p>Tempelkan teks mentah Anda di bawah. Hasil akan langsung dirapikan otomatis di area bawah (Judul Bab, Dialog rapat, & Narasi berjarak).</p>
+    <header>
+        <div class="brand" onclick="showView('v-home')">📚 Koleksi Novel</div>
+        <div class="btn-group">
+            <button class="sec" onclick="exportData()">Export Backup</button>
+            <button class="sec" onclick="document.getElementById('f-imp').click()">Import Backup</button>
+            <input type="file" id="f-imp" style="display:none" onchange="importData(event)">
+            <button onclick="openModal('m-novel')">+ Novel Baru</button>
+        </div>
+    </header>
 
-    <!-- Area Tempel Teks Mentah -->
-    <textarea id="rawInput" placeholder="Tempel naskah Anda di sini...
+    <main>
+        <!-- BERANDA (KOLEKSI NOVEL) -->
+        <div id="v-home">
+            <div class="stats">
+                <div>Total Novel: <b id="st-n">0</b></div>
+                <div>Total Bab: <b id="st-c">0</b></div>
+            </div>
+            <div class="search">
+                <input type="text" id="s-input" placeholder="Cari judul novel..." oninput="renderNovels()">
+            </div>
+            <div id="n-list" class="grid"></div>
+        </div>
 
-Contoh:
-BAB 1: Awal Mula
-Matahari baru saja terbit di ufuk timur. Kebun bunga masih basah oleh embun pagi.
-&quot;Kamu sudah siap pergi?&quot; tanya Budi.
-&quot;Sudah, ayo berangkat sekarang,&quot; jawab Siti.
-&quot;Jangan sampai ada yang tertinggal.&quot;
-Mereka pun melangkah keluar rumah menuju petualangan baru."></textarea>
+        <!-- DETAIL NOVEL -->
+        <div id="v-novel" class="view">
+            <button class="sec" style="margin-bottom: 16px;" onclick="showView('v-home')">← Kembali ke Koleksi</button>
+            <div class="novel-header">
+                <img id="d-cover" class="novel-cover" src="" alt="Cover">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                    <h2 id="d-title" style="color:#fff;"></h2>
+                    <div id="d-author" style="font-size: 0.85rem; color: var(--sub);"></div>
+                    <p id="d-desc" style="font-size: 0.85rem; color: var(--sub); flex: 1;"></p>
+                    <div class="btn-group">
+                        <button onclick="openModal('m-chap')">+ Tambah Bab</button>
+                        <button class="danger" onclick="delNovel()">Hapus Novel</button>
+                    </div>
+                </div>
+            </div>
+            <h3 style="margin-bottom: 12px; color: #fff;">Daftar Bab</h3>
+            <div id="c-list" class="chap-list"></div>
+        </div>
 
-    <!-- Area Hasil Format Otomatis -->
-    <div class="output-card" id="formattedOutput">
-      <em style="color: #888;">Hasil rapi akan muncul di sini secara otomatis...</em>
+        <!-- BACA BAB (READER MODE) -->
+        <div id="v-reader" class="view">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <button class="sec" onclick="showView('v-novel')">← Daftar Bab</button>
+                <button class="danger" onclick="delChap()">Hapus Bab Ini</button>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 10px; background: var(--card); padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
+                <div>
+                    <label style="font-size:0.8rem;">Ukuran Font:</label>
+                    <select onchange="document.getElementById('r-box').style.fontSize=this.value" style="width:auto; padding:4px;">
+                        <option value="0.95rem">Kecil</option>
+                        <option value="1.1rem" selected>Normal</option>
+                        <option value="1.25rem">Besar</option>
+                        <option value="1.4rem">Sangat Besar</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.8rem;">Tema Warna:</label>
+                    <select onchange="document.getElementById('r-box').className='reader-box '+this.value" style="width:auto; padding:4px;">
+                        <option value="theme-dark" selected>Gelap</option>
+                        <option value="theme-light">Terang</option>
+                        <option value="theme-sepia">Sepia</option>
+                    </select>
+                </div>
+            </div>
+            <h2 id="r-title" style="margin-top: 16px; text-align: center; color: #fff;"></h2>
+            <div id="r-box" class="reader-box theme-dark"></div>
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <button id="b-prev" class="sec" onclick="navChap(-1)">← Bab Sebelumnya</button>
+                <button id="b-next" class="sec" onclick="navChap(1)">Bab Selanjutnya →</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL TAMBAH NOVEL -->
+    <div id="m-novel" class="modal">
+        <div class="modal-body">
+            <h3 style="margin-bottom:12px; color:#fff;">Tambah Novel</h3>
+            <div class="form-g"><label>Judul Novel *</label><input type="text" id="in-n-title"></div>
+            <div class="form-g"><label>Penulis</label><input type="text" id="in-n-author"></div>
+            <div class="form-g"><label>Sinopsis</label><textarea id="in-n-desc" style="height:70px;"></textarea></div>
+            <div class="form-g"><label>Sampul (File Gambar)</label><input type="file" accept="image/*" onchange="loadCover(event)"></div>
+            <div class="btn-group" style="justify-content:flex-end;">
+                <button class="sec" onclick="closeModal('m-novel')">Batal</button>
+                <button onclick="addNovel()">Simpan Novel</button>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    const rawInput = document.getElementById('rawInput');
-    const formattedOutput = document.getElementById('formattedOutput');
+    <!-- MODAL TAMBAH BAB -->
+    <div id="m-chap" class="modal">
+        <div class="modal-body">
+            <h3 style="margin-bottom:12px; color:#fff;">Tambah Bab</h3>
+            <div class="form-g"><label>Judul / Nomor Bab *</label><input type="text" id="in-c-title" placeholder="Contoh: Bab 1 - Awal Cerita"></div>
+            <div class="form-g"><label>Isi Teks Bab * (Tempel teks di sini)</label><textarea id="in-c-text" style="height:200px;" placeholder="Tempel teks bab di sini... Jarak paragraf dan dialog akan otomatis disesuaikan dengan rapi saat disimpan."></textarea></div>
+            <div class="btn-group" style="justify-content:flex-end; margin-top:10px;">
+                <button class="sec" onclick="closeModal('m-chap')">Batal</button>
+                <button onclick="addChap()">Simpan Bab</button>
+            </div>
+        </div>
+    </div>
 
-    // Fungsi otomatisasi pemrosesan teks
-    function processText() {
-      const text = rawInput.value.trim();
-      
-      if (!text) {
-        formattedOutput.innerHTML = '<em style="color: #888;">Hasil rapi akan muncul di sini secara otomatis...</em>';
-        return;
-      }
+    <script>
+        let db = [], activeNovelId = null, activeChapId = null, tempCover = "";
 
-      // Memecah teks berdasarkan baris baru (enter)
-      const lines = text.split(/\r?\n/);
-      let htmlResult = '';
+        window.onload = function() {
+            try { db = JSON.parse(localStorage.getItem('my_novels_db')) || []; } catch(e){ db = []; }
+            updateStats(); renderNovels();
+        };
 
-      lines.forEach(line => {
-        const trimmedLine = line.trim();
-        if (!trimmedLine) return; // Abaikan baris kosong
-
-        // 1. Deteksi Judul Bab (Awalnya mengandung kata BAB / Chapter atau diawali #)
-        if (/^(bab|chapter|\#)/i.test(trimmedLine)) {
-          htmlResult += `<h2 class="judul-bab">${trimmedLine}</h2>`;
-        } 
-        // 2. Deteksi Dialog (Diawali tanda petik tunggal/ganda atau tanda kurung/strip dialog)
-        else if (/^["'“'«\-–—]/.test(trimmedLine)) {
-          htmlResult += `<p class="dialog">${trimmedLine}</p>`;
-        } 
-        // 3. Jika bukan dialog/bab, dianggap sebagai Narasi Biasa
-        else {
-          htmlResult += `<p class="narasi">${trimmedLine}</p>`;
+        function saveDB() {
+            localStorage.setItem('my_novels_db', JSON.stringify(db));
+            updateStats(); renderNovels();
         }
-      });
 
-      formattedOutput.innerHTML = htmlResult;
-    }
+        function updateStats() {
+            document.getElementById('st-n').innerText = db.length;
+            let count = 0;
+            db.forEach(n => count += (n.chapters ? n.chapters.length : 0));
+            document.getElementById('st-c').innerText = count;
+        }
 
-    // Menjalankan fungsi otomatis saat mengetik atau menempelkan (paste) teks
-    rawInput.addEventListener('input', processText);
-  </script>
+        function showView(id) {
+            document.getElementById('v-home').style.display = 'none';
+            document.getElementById('v-novel').style.display = 'none';
+            document.getElementById('v-reader').style.display = 'none';
+            document.getElementById(id).style.display = 'block';
+        }
 
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function loadCover(e) {
+            let file = e.target.files[0];
+            if(file) {
+                let r = new FileReader();
+                r.onload = function(evt) { tempCover = evt.target.result; };
+                r.readAsDataURL(file);
+            }
+        }
+
+        // PEMROSES OTOMATIS: MEMISAHKAN PARAGRAF DENGAN RAPI SAAT SIMPAN
+        // MENJAGA DIALOG TETAP RAPAT, TETAPI NARASI BERJARAK
+        function processContentSmart(rawText) {
+            if (!rawText) return "";
+            
+            // Standardisasi newline
+            let formatted = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+            
+            // Beri pemisah otomatis jika ada kalimat yang nempel tanpa baris baru
+            formatted = formatted.replace(/([.!?”"']) ([A-Z1-9"“'–—])/g, '$1\n$2');
+            
+            let lines = formatted.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            let htmlOutput = "";
+
+            lines.forEach(line => {
+                // Deteksi Dialog (diawali dengan petik atau strip dialog)
+                if (/^["'“'«\-–—]/.test(line)) {
+                    htmlOutput += `<p class="dialog">${line}</p>`;
+                } else {
+                    // Narasi biasa
+                    htmlOutput += `<p class="narasi">${line}</p>`;
+                }
+            });
+
+            return htmlOutput;
+        }
+
+        function addNovel() {
+            let title = document.getElementById('in-n-title').value.trim();
+            if(!title) return alert('Judul novel harus diisi!');
+            db.push({
+                id: Date.now(),
+                title: title,
+                author: document.getElementById('in-n-author').value.trim() || 'Anonim',
+                desc: document.getElementById('in-n-desc').value.trim() || 'Tidak ada deskripsi.',
+                cover: tempCover,
+                chapters: []
+            });
+            document.getElementById('in-n-title').value = '';
+            document.getElementById('in-n-author').value = '';
+            document.getElementById('in-n-desc').value = '';
+            tempCover = "";
+            closeModal('m-novel'); saveDB();
+        }
+
+        function renderNovels() {
+            let box = document.getElementById('n-list'), s = document.getElementById('s-input').value.toLowerCase();
+            box.innerHTML = "";
+            let list = db.filter(n => n.title.toLowerCase().includes(s));
+            if(list.length === 0) { box.innerHTML = '<div style="color:var(--sub); grid-column:1/-1;">Koleksi kosong.</div>'; return; }
+            
+            list.forEach(n => {
+                let card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = function() { openNovel(n.id); };
+                let img = n.cover || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="%231e1e1e"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23a0a0a0" font-size="12">Tanpa Sampul</text></svg>';
+                card.innerHTML = '<img src="'+img+'" class="card-cover"><div class="card-body"><div class="card-title">'+n.title+'</div><div class="card-sub">'+n.author+'</div><div class="card-sub" style="color:var(--accent); margin-top:auto;">'+(n.chapters?n.chapters.length:0)+' Bab</div></div>';
+                box.appendChild(card);
+            });
+        }
+
+        function openNovel(id) {
+            activeNovelId = id;
+            let n = db.find(item => item.id === id);
+            if(!n) return;
+            document.getElementById('d-title').innerText = n.title;
+            document.getElementById('d-author').innerText = 'Penulis: ' + n.author;
+            document.getElementById('d-desc').innerText = n.desc;
+            document.getElementById('d-cover').src = n.cover || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" fill="%231e1e1e"><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23a0a0a0" font-size="12">Tanpa Sampul</text></svg>';
+            renderChapters(); showView('v-novel');
+        }
+
+        function delNovel() {
+            if(confirm('Hapus novel ini beserta seluruh babnya?')) {
+                db = db.filter(n => n.id !== activeNovelId);
+                saveDB(); showView('v-home');
+            }
+        }
+
+        function addChap() {
+            let title = document.getElementById('in-c-title').value.trim();
+            let rawText = document.getElementById('in-c-text').value.trim();
+            if(!title || !rawText) return alert('Judul dan isi bab wajib diisi!');
+            
+            // Proses format otomatis saat disimpan
+            let formattedContent = processContentSmart(rawText);
+
+            let n = db.find(item => item.id === activeNovelId);
+            if(n) {
+                if(!n.chapters) n.chapters = [];
+                n.chapters.push({ id: Date.now(), title: title, content: formattedContent });
+                document.getElementById('in-c-title').value = '';
+                document.getElementById('in-c-text').value = '';
+                closeModal('m-chap'); saveDB(); renderChapters();
+            }
+        }
+
+        function renderChapters() {
+            let box = document.getElementById('c-list'); box.innerHTML = "";
+            let n = db.find(item => item.id === activeNovelId);
+            if(!n || !n.chapters || n.chapters.length === 0) { box.innerHTML = '<div style="color:var(--sub);">Belum ada bab.</div>'; return; }
+            
+            n.chapters.forEach(c => {
+                let div = document.createElement('div');
+                div.className = 'chap-item';
+                div.onclick = function() { readChap(c.id); };
+                div.innerHTML = '<div style="font-weight:600; color:#fff;">'+c.title+'</div><div style="font-size:0.8rem; color:var(--sub);">Baca →</div>';
+                box.appendChild(div);
+            });
+        }
+
+        function readChap(id) {
+            activeChapId = id;
+            let n = db.find(item => item.id === activeNovelId);
+            let c = n ? n.chapters.find(item => item.id === id) : null;
+            if(!c) return;
+
+            document.getElementById('r-title').innerText = c.title;
+            document.getElementById('r-box').innerHTML = c.content;
+
+            let idx = n.chapters.findIndex(item => item.id === id);
+            document.getElementById('b-prev').disabled = (idx === 0);
+            document.getElementById('b-next').disabled = (idx === n.chapters.length - 1);
+            showView('v-reader');
+        }
+
+        function navChap(dir) {
+            let n = db.find(item => item.id === activeNovelId);
+            if(!n) return;
+            let idx = n.chapters.findIndex(item => item.id === activeChapId);
+            if(idx + dir >= 0 && idx + dir < n.chapters.length) readChap(n.chapters[idx + dir].id);
+        }
+
+        function delChap() {
+            if(confirm('Hapus bab ini?')) {
+                let n = db.find(item => item.id === activeNovelId);
+                if(n) {
+                    n.chapters = n.chapters.filter(c => c.id !== activeChapId);
+                    saveDB(); renderChapters(); showView('v-novel');
+                }
+            }
+        }
+
+        function exportData() {
+            let a = document.createElement('a');
+            a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db));
+            a.download = "Koleksi_Novel_Backup.json";
+            document.body.appendChild(a); a.click(); a.remove();
+        }
+
+        function importData(e) {
+            let file = e.target.files[0];
+            if(!file) return;
+            let r = new FileReader();
+            r.onload = function(evt) {
+                try { db = JSON.parse(evt.target.result); saveDB(); alert('Data berhasil diimpor!'); }
+                catch(err) { alert('File JSON tidak valid!'); }
+            };
+            r.readAsText(file);
+        }
+    </script>
 </body>
-</html>
+                                                                  </html>
+                                                        
