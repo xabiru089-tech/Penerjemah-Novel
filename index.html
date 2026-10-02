@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penerjemah & Pembaca Novel Manual</title>
+    <title>Penerjemah & Pembaca Novel Otomatis</title>
     <style>
         :root {
             --bg-main: #121319;
@@ -21,6 +21,7 @@
         .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
         button { background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 0.85rem; }
         button:hover { background: var(--accent-hover); }
+        button:disabled { background: var(--border); cursor: not-allowed; }
         button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-top: 15px; }
         .card { background: var(--bg-card); border-radius: 8px; padding: 10px; border: 1px solid var(--border); display: flex; flex-direction: column; cursor: pointer; }
@@ -36,6 +37,7 @@
         .reader-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
         .reader-content { font-size: 1.05rem; line-height: 1.8; color: #D1D5DB; white-space: pre-wrap; }
         .editor-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .status-msg { font-size: 0.8rem; color: var(--accent); margin-top: 5px; min-height: 18px; }
         @media (max-width: 600px) {
             .editor-container { grid-template-columns: 1fr; }
         }
@@ -45,7 +47,7 @@
 
     <div id="app-home">
         <header>
-            <div class="logo">Arsip Novel Manual</div>
+            <div class="logo">Arsip Novel Terjemahan</div>
             <div class="btn-group">
                 <button class="secondary" onclick="exportData()">Export</button>
                 <button class="secondary" onclick="document.getElementById('file-input').click()">Import</button>
@@ -89,10 +91,10 @@
         </div>
     </div>
 
-    <!-- Modal Chapter (TANPA API) -->
+    <!-- Modal Chapter -->
     <div id="modal-chapter" class="modal">
         <div class="modal-content">
-            <h3>Input Bab Terjemahan</h3><br>
+            <h3>Input & Terjemahkan Bab</h3><br>
             
             <div class="form-group">
                 <label>Judul Bab</label>
@@ -101,12 +103,16 @@
 
             <div class="editor-container">
                 <div class="form-group">
-                    <label style="color: var(--accent); font-weight: bold;">Teks Mandarin Asli (Opsional)</label>
-                    <textarea id="raw-chinese-text" placeholder="Tempel teks Mandarin asli di sini sebagai acuan..."></textarea>
+                    <label style="color: var(--accent); font-weight: bold;">Teks Mandarin (Asli)</label>
+                    <textarea id="raw-chinese-text" placeholder="Tempel teks Mandarin di sini..."></textarea>
+                    <button type="button" id="btn-translate" onclick="autoTranslateProcess()" style="margin-top: 8px; width: 100%;">
+                        ⚡ Terjemahkan Otomatis
+                    </button>
+                    <div id="translate-status" class="status-msg"></div>
                 </div>
                 <div class="form-group">
-                    <label style="color: #4CAF50; font-weight: bold;">Hasil Terjemahan Indonesia</label>
-                    <textarea id="input-chapter-content" placeholder="Ketik atau tempel hasil terjemahan Indonesia di sini..."></textarea>
+                    <label style="color: #4CAF50; font-weight: bold;">Hasil Terjemahan Bahasa Indonesia</label>
+                    <textarea id="input-chapter-content" placeholder="Hasil terjemahan akan muncul di sini dan bisa kamu edit kembali jika perlu..."></textarea>
                 </div>
             </div>
 
@@ -118,11 +124,11 @@
     </div>
 
     <script>
-        let db = JSON.parse(localStorage.getItem('my_novels_manual_v2')) || [];
+        let db = JSON.parse(localStorage.getItem('my_novels_auto_v1')) || [];
         let activeNovelId = null;
 
         function saveData() {
-            localStorage.setItem('my_novels_manual_v2', JSON.stringify(db));
+            localStorage.setItem('my_novels_auto_v1', JSON.stringify(db));
             renderNovels();
         }
 
@@ -133,6 +139,69 @@
 
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // --- SISTEM TERJEMAHAN OTOMATIS TANPA KUNCI API ---
+        async function translateChunk(text) {
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=id&dt=t&q=${encodeURIComponent(text)}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Gagal terjemah');
+            const data = await res.json();
+            
+            let translated = '';
+            if (data && data[0]) {
+                data[0].forEach(item => {
+                    if (item[0]) translated += item[0];
+                });
+            }
+            return translated;
+        }
+
+        // Penyesuaian kata/kosakata novel secara otomatis
+        function sanitizeNovelStyle(text) {
+            return text
+                .replace(/\b(kamu|anda)\b/gi, 'kau')
+                .replace(/\b(saya|hamba)\b/gi, 'aku')
+                .replace(/\b(bro|sis|mas|mbak|bang|bung|lo|gue)\b/gi, '')
+                .replace(/  +/g, ' '); // Hapus spasi berlebih
+        }
+
+        async function autoTranslateProcess() {
+            const rawText = document.getElementById('raw-chinese-text').value.trim();
+            const statusEl = document.getElementById('translate-status');
+            const btnTranslate = document.getElementById('btn-translate');
+            
+            if (!rawText) {
+                alert('Tempelkan teks Mandarin terlebih dahulu!');
+                return;
+            }
+
+            statusEl.innerText = 'Menerjemahkan... Mohon tunggu.';
+            btnTranslate.disabled = true;
+
+            try {
+                // Bagi paragraf agar penerjemahan stabil & tidak terpotong
+                const paragraphs = rawText.split('\n');
+                let result = [];
+
+                for (let p of paragraphs) {
+                    if (p.trim().length === 0) {
+                        result.push('');
+                        continue;
+                    }
+                    let translatedP = await translateChunk(p);
+                    translatedP = sanitizeNovelStyle(translatedP);
+                    result.push(translatedP);
+                }
+
+                document.getElementById('input-chapter-content').value = result.join('\n');
+                statusEl.innerText = '✅ Terjemahan selesai!';
+            } catch (err) {
+                console.error(err);
+                statusEl.innerText = '❌ Terjadi kesalahan saat menerjemahkan.';
+            } finally {
+                btnTranslate.disabled = false;
+            }
+        }
 
         function saveNovel() {
             const title = document.getElementById('input-novel-title').value.trim();
@@ -169,7 +238,7 @@
             const rawChinese = document.getElementById('raw-chinese-text').value.trim();
             
             if(!title || !content) {
-                alert('Judul Bab dan Hasil Terjemahan Indonesia tidak boleh kosong!');
+                alert('Judul Bab dan Hasil Terjemahan tidak boleh kosong!');
                 return;
             }
 
@@ -179,6 +248,7 @@
             document.getElementById('input-chapter-title').value = '';
             document.getElementById('input-chapter-content').value = '';
             document.getElementById('raw-chinese-text').value = '';
+            document.getElementById('translate-status').innerText = '';
             closeModal('modal-chapter');
             saveData();
             renderChapters();
@@ -218,7 +288,7 @@
             const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'cadangan_novel_manual.json';
+            a.download = 'cadangan_novel.json';
             a.click();
         }
 
@@ -241,4 +311,5 @@
         renderNovels();
     </script>
 </body>
-</html>
+                        </html>
+                        
