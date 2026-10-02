@@ -1,309 +1,168 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Penerjemah Novel Otomatis</title>
-    <style>
-        :root {
-            --bg-main: #121319;
-            --bg-card: #1A1C24;
-            --accent: #7C4DFF;
-            --accent-hover: #6538E0;
-            --text-main: #E0E0E0;
-            --text-sub: #A0A0A0;
-            --border: #2A2D3D;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--bg-main); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-        .logo { font-size: 1.2rem; font-weight: bold; color: var(--accent); }
-        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
-        button { background: var(--accent); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 0.85rem; }
-        button:hover { background: var(--accent-hover); }
-        button:disabled { background: var(--border); cursor: not-allowed; }
-        button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-top: 15px; }
-        .card { background: var(--bg-card); border-radius: 8px; padding: 10px; border: 1px solid var(--border); display: flex; flex-direction: column; cursor: pointer; }
-        .card-title { font-weight: bold; font-size: 0.95rem; margin-bottom: 5px; color: #FFF; line-height: 1.2; }
-        .card-info { font-size: 0.75rem; color: var(--text-sub); }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; padding: 15px; z-index: 100; }
-        .modal-content { background: var(--bg-card); width: 100%; max-width: 700px; border-radius: 10px; padding: 20px; border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-sub); }
-        input, textarea { width: 100%; background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 10px; border-radius: 6px; font-size: 0.9rem; }
-        textarea { resize: vertical; min-height: 200px; }
-        .reader-view { display: none; }
-        .reader-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
-        .reader-content { font-size: 1.05rem; line-height: 1.8; color: #D1D5DB; white-space: pre-wrap; }
-        .status-msg { font-size: 0.85rem; color: #FFB74D; margin-top: 8px; font-weight: bold; }
-        .btn-large { width: 100%; padding: 12px; font-size: 0.95rem; font-weight: bold; margin-top: 5px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pengatur Paragraf & Dialog Otomatis</title>
+  <style>
+    :root {
+      --primary-color: #2c3e50;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+      --border-color: #e0e0e0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Georgia, serif;
+      background-color: var(--bg-color);
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      font-size: 1.8rem;
+    }
+
+    textarea {
+      width: 100%;
+      height: 200px;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 1rem;
+      font-family: inherit;
+      resize: vertical;
+      box-sizing: border-box;
+      margin-bottom: 15px;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #3498db;
+    }
+
+    /* Area Output Hasil */
+    .output-card {
+      margin-top: 30px;
+      padding: 25px;
+      border-top: 2px dashed var(--border-color);
+      background-color: #fff;
+    }
+
+    /* Styling Otomatis untuk Judul Bab */
+    .output-card h2.judul-bab {
+      text-align: center;
+      color: var(--primary-color);
+      font-size: 1.5rem;
+      margin-top: 10px;
+      margin-bottom: 25px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* Styling Otomatis untuk Narasi Biasa (Jarak Renggang) */
+    .output-card p.narasi {
+      margin-top: 0;
+      margin-bottom: 1.25em; /* Jarak antar paragraf biasa */
+      line-height: 1.7;
+      text-indent: 2em; /* Indentasi awal paragraf */
+      text-align: justify;
+    }
+
+    /* Styling Otomatis untuk Dialog (Jarak Rapat) */
+    .output-card p.dialog {
+      margin-top: 0;
+      margin-bottom: 0.35em; /* Jarak antar dialog dibuat rapat */
+      line-height: 1.5;
+      text-indent: 0;
+      color: #1a1a1a;
+    }
+
+    /* Memberi jarak ekstra setelah baris dialog terakhir masuk ke narasi baru */
+    .output-card p.dialog + p.narasi {
+      margin-top: 1em;
+    }
+  </style>
 </head>
 <body>
 
-    <div id="app-home">
-        <header>
-            <div class="logo">Arsip Novel Terjemahan</div>
-            <div class="btn-group">
-                <button class="secondary" onclick="exportData()">Export Data</button>
-                <button class="secondary" onclick="document.getElementById('file-input').click()">Import Data</button>
-                <input type="file" id="file-input" style="display:none" onchange="importData(event)">
-                <button onclick="openModal('modal-novel')">+ Novel Baru</button>
-            </div>
-        </header>
-        <div id="novel-list" class="grid"></div>
+  <div class="container">
+    <h1>Format Naskah Otomatis</h1>
+    <p>Tempelkan teks mentah Anda di bawah. Hasil akan langsung dirapikan otomatis di area bawah (Judul Bab, Dialog rapat, & Narasi berjarak).</p>
+
+    <!-- Area Tempel Teks Mentah -->
+    <textarea id="rawInput" placeholder="Tempel naskah Anda di sini...
+
+Contoh:
+BAB 1: Awal Mula
+Matahari baru saja terbit di ufuk timur. Kebun bunga masih basah oleh embun pagi.
+&quot;Kamu sudah siap pergi?&quot; tanya Budi.
+&quot;Sudah, ayo berangkat sekarang,&quot; jawab Siti.
+&quot;Jangan sampai ada yang tertinggal.&quot;
+Mereka pun melangkah keluar rumah menuju petualangan baru."></textarea>
+
+    <!-- Area Hasil Format Otomatis -->
+    <div class="output-card" id="formattedOutput">
+      <em style="color: #888;">Hasil rapi akan muncul di sini secara otomatis...</em>
     </div>
+  </div>
 
-    <div id="app-novel" class="reader-view">
-        <header>
-            <button class="secondary" onclick="showView('app-home')">← Kembali</button>
-            <div id="novel-detail-title" class="logo">Detail Novel</div>
-            <button onclick="openModal('modal-chapter')">+ Tambah Bab Baru</button>
-        </header>
-        <div id="chapter-list" class="grid"></div>
-    </div>
+  <script>
+    const rawInput = document.getElementById('rawInput');
+    const formattedOutput = document.getElementById('formattedOutput');
 
-    <div id="app-reader" class="reader-view">
-        <div class="reader-header">
-            <button class="secondary" onclick="showView('app-novel')">← Daftar Bab</button>
-            <h3 id="read-chapter-title">Judul Bab</h3>
-            <div></div>
-        </div>
-        <div id="read-chapter-content" class="reader-content"></div>
-    </div>
+    // Fungsi otomatisasi pemrosesan teks
+    function processText() {
+      const text = rawInput.value.trim();
+      
+      if (!text) {
+        formattedOutput.innerHTML = '<em style="color: #888;">Hasil rapi akan muncul di sini secara otomatis...</em>';
+        return;
+      }
 
-    <!-- Modal Novel -->
-    <div id="modal-novel" class="modal">
-        <div class="modal-content">
-            <h3>Tambah Judul Novel</h3><br>
-            <div class="form-group">
-                <label>Judul Novel</label>
-                <input type="text" id="input-novel-title" placeholder="Contoh: Martial Peak">
-            </div>
-            <div class="btn-group" style="justify-content: flex-end;">
-                <button class="secondary" onclick="closeModal('modal-novel')">Batal</button>
-                <button onclick="saveNovel()">Simpan</button>
-            </div>
-        </div>
-    </div>
+      // Memecah teks berdasarkan baris baru (enter)
+      const lines = text.split(/\r?\n/);
+      let htmlResult = '';
 
-    <!-- Modal Chapter (OTOMATIS TANPA KOTAK TEKS INDONESIA) -->
-    <div id="modal-chapter" class="modal">
-        <div class="modal-content">
-            <h3>Input & Terjemahkan Bab</h3><br>
-            
-            <div class="form-group">
-                <label>Judul Bab</label>
-                <input type="text" id="input-chapter-title" placeholder="Contoh: Bab 1: Kemunculan Kembali">
-            </div>
+      lines.forEach(line => {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) return; // Abaikan baris kosong
 
-            <div class="form-group">
-                <label style="color: var(--accent); font-weight: bold;">Tempel Teks Mandarin Di Sini</label>
-                <textarea id="raw-chinese-text" placeholder="Tempel seluruh paragraf Mandarin di sini..."></textarea>
-            </div>
-
-            <button type="button" class="btn-large" id="btn-translate" onclick="processAndSaveChapter()">
-                ⚡ Terjemahkan & Simpan Bab Otomatis
-            </button>
-            
-            <div id="translate-status" class="status-msg"></div>
-
-            <div class="btn-group" style="justify-content: flex-end; margin-top: 15px;">
-                <button class="secondary" onclick="closeModal('modal-chapter')">Batal</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let db = JSON.parse(localStorage.getItem('my_novels_auto_v2')) || [];
-        let activeNovelId = null;
-
-        function saveData() {
-            localStorage.setItem('my_novels_auto_v2', JSON.stringify(db));
-            renderNovels();
+        // 1. Deteksi Judul Bab (Awalnya mengandung kata BAB / Chapter atau diawali #)
+        if (/^(bab|chapter|\#)/i.test(trimmedLine)) {
+          htmlResult += `<h2 class="judul-bab">${trimmedLine}</h2>`;
+        } 
+        // 2. Deteksi Dialog (Diawali tanda petik tunggal/ganda atau tanda kurung/strip dialog)
+        else if (/^["'“'«\-–—]/.test(trimmedLine)) {
+          htmlResult += `<p class="dialog">${trimmedLine}</p>`;
+        } 
+        // 3. Jika bukan dialog/bab, dianggap sebagai Narasi Biasa
+        else {
+          htmlResult += `<p class="narasi">${trimmedLine}</p>`;
         }
+      });
 
-        function showView(viewId) {
-            document.querySelectorAll('#app-home, .reader-view').forEach(el => el.style.display = 'none');
-            document.getElementById(viewId).style.display = 'block';
-        }
+      formattedOutput.innerHTML = htmlResult;
+    }
 
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { 
-            document.getElementById(id).style.display = 'none'; 
-            document.getElementById('translate-status').innerText = '';
-        }
+    // Menjalankan fungsi otomatis saat mengetik atau menempelkan (paste) teks
+    rawInput.addEventListener('input', processText);
+  </script>
 
-        // --- SISTEM TERJEMAHAN OTOMATIS BEBAS API KEY ---
-        async function translateChunk(text) {
-            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=zh-CN&tl=id&dt=t&q=${encodeURIComponent(text)}`;
-            const res = await fetch(url);
-            if (!res.ok) throw new Error('Gagal terjemah');
-            const data = await res.json();
-            
-            let translated = '';
-            if (data && data[0]) {
-                data[0].forEach(item => {
-                    if (item[0]) translated += item[0];
-                });
-            }
-            return translated;
-        }
-
-        // Pembersihan & Penyelarasan Gaya Bahasa Novel Baku
-        function sanitizeNovelStyle(text) {
-            return text
-                .replace(/\b(kamu|anda)\b/gi, 'kau')
-                .replace(/\b(saya|hamba)\b/gi, 'aku')
-                .replace(/\b(mas|mbak|bang|bung|lo|gue|bro|sis)\b/gi, '')
-                .replace(/  +/g, ' ');
-        }
-
-        async function processAndSaveChapter() {
-            const title = document.getElementById('input-chapter-title').value.trim();
-            const rawText = document.getElementById('raw-chinese-text').value.trim();
-            const statusEl = document.getElementById('translate-status');
-            const btnTranslate = document.getElementById('btn-translate');
-
-            if (!title) {
-                alert('Isi Judul Bab terlebih dahulu!');
-                return;
-            }
-            if (!rawText) {
-                alert('Tempelkan teks Mandarin terlebih dahulu!');
-                return;
-            }
-
-            statusEl.innerText = '⏳ Sedang menerjemahkan secara otomatis... Mohon tunggu sebentar.';
-            btnTranslate.disabled = true;
-
-            try {
-                const paragraphs = rawText.split('\n');
-                let result = [];
-
-                for (let p of paragraphs) {
-                    if (p.trim().length === 0) {
-                        result.push('');
-                        continue;
-                    }
-                    let translatedP = await translateChunk(p);
-                    translatedP = sanitizeNovelStyle(translatedP);
-                    result.push(translatedP);
-                }
-
-                const translatedContent = result.join('\n');
-
-                // Simpan langsung ke database
-                const novel = db.find(n => n.id === activeNovelId);
-                novel.chapters.push({ 
-                    id: Date.now(), 
-                    title: title, 
-                    content: translatedContent, 
-                    rawChinese: rawText 
-                });
-
-                saveData();
-                renderChapters();
-
-                // Bersihkan form
-                document.getElementById('input-chapter-title').value = '';
-                document.getElementById('raw-chinese-text').value = '';
-                closeModal('modal-chapter');
-
-                alert('✅ Bab berhasil diterjemahkan dan disimpan!');
-            } catch (err) {
-                console.error(err);
-                statusEl.innerText = '❌ Terjadi kesalahan koneksi saat menerjemahkan.';
-            } finally {
-                btnTranslate.disabled = false;
-            }
-        }
-
-        function saveNovel() {
-            const title = document.getElementById('input-novel-title').value.trim();
-            if(!title) return;
-            db.push({ id: Date.now(), title, chapters: [] });
-            document.getElementById('input-novel-title').value = '';
-            closeModal('modal-novel');
-            saveData();
-        }
-
-        function renderNovels() {
-            const container = document.getElementById('novel-list');
-            container.innerHTML = db.length === 0 ? '<p style="color:var(--text-sub)">Belum ada novel. Klik + Novel Baru untuk menambah.</p>' : '';
-            db.forEach(n => {
-                container.innerHTML += `
-                    <div class="card" onclick="openNovel(${n.id})">
-                        <div class="card-title">${n.title}</div>
-                        <div class="card-info">${n.chapters.length} Bab</div>
-                    </div>`;
-            });
-        }
-
-        function openNovel(id) {
-            activeNovelId = id;
-            const novel = db.find(n => n.id === id);
-            document.getElementById('novel-detail-title').innerText = novel.title;
-            renderChapters();
-            showView('app-novel');
-        }
-
-        function renderChapters() {
-            const novel = db.find(n => n.id === activeNovelId);
-            const container = document.getElementById('chapter-list');
-            container.innerHTML = novel.chapters.length === 0 ? '<p style="color:var(--text-sub)">Belum ada bab.</p>' : '';
-            novel.chapters.forEach(c => {
-                container.innerHTML += `
-                    <div class="card" onclick="readChapter(${c.id})">
-                        <div class="card-title">${c.title}</div>
-                    </div>`;
-            });
-        }
-
-        function readChapter(chapId) {
-            const novel = db.find(n => n.id === activeNovelId);
-            const chap = novel.chapters.find(c => c.id === chapId);
-            document.getElementById('read-chapter-title').innerText = chap.title;
-            
-            let displayHtml = "";
-            if (chap.rawChinese) {
-                displayHtml += `<details style="margin-bottom:20px; background:var(--bg-card); padding:10px; border-radius:6px; border:1px solid var(--border);">
-                    <summary style="cursor:pointer; color:var(--accent); font-weight:bold;">Tampilkan Teks Mandarin Asli</summary>
-                    <p style="margin-top:10px; color:var(--text-sub); white-space:pre-wrap;">${chap.rawChinese}</p>
-                </details>`;
-            }
-            displayHtml += `<div>${chap.content}</div>`;
-
-            document.getElementById('read-chapter-content').innerHTML = displayHtml;
-            showView('app-reader');
-        }
-
-        function exportData() {
-            const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'cadangan_novel.json';
-            a.click();
-        }
-
-        function importData(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    db = JSON.parse(evt.target.result);
-                    saveData();
-                    alert('Data berhasil diimpor!');
-                } catch(err) {
-                    alert('File JSON tidak valid!');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        renderNovels();
-    </script>
 </body>
 </html>
